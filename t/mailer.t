@@ -1,8 +1,8 @@
 
-# $Id: mailer.t,v 1.3 2003/11/07 22:44:20 lem Exp $
+# $Id: mailer.t,v 1.4 2004/02/04 22:45:21 lem Exp $
 
+use IO::File;
 use Test::More;
-use IO::Scalar;
 use Mail::Abuse::Report;
 use Mail::Abuse::Processor::Mailer;
 use Mail::Abuse::Incident::Normalize;
@@ -12,6 +12,7 @@ our $stdout;
 our $config	= './config' . $$;
 our $fail	= './fail' . $$;
 our $success	= './success' . $$;
+our $output	= './output' . $$;
 our @msgs = ();
 our $msg = 0;
 
@@ -28,7 +29,9 @@ package MyReader;
 use base 'Mail::Abuse::Reader';
 sub read
 { 
-  main::ok(1, "Read message $main::msg");
+  main::ok(1, "Read message $main::msg with " 
+         . length($main::msgs[$main::msg]) . ' octets');
+#    print "Read ", $main::msgs[$main::msg++], "\n";
     $_[1]->text(\$main::msgs[$main::msg++]); 
     return 1;
 }
@@ -67,7 +70,6 @@ mailer reply to: this_is_the_mailer_reply_to_address
 mailer errors to: this_is_the_mailer_errors_to_address
 mailer fail message: $fail
 mailer success message: $success
-#debug store: on
 EOF
     ;
     $fh->close || return;
@@ -94,11 +96,29 @@ END
     unlink $config; 
     unlink $success; 
     unlink $fail; 
+#    unlink $output;
 }
 
+sub stdout_reset
+{
+    unlink $output;
+    close STDOUT;
+    open STDOUT, ">$output"
+      or die "Failed to create stdout file ($output): $!\n";
+}
+
+sub capture
+{
+    my $fh = new IO::File "$output"
+      or die "Failed to open stdout file ($output): $!\n";
+    local $/ = undef;
+    return <$fh>;
+}
 
 SKIP:
 {
+    skip "This test is currently broken by what seems to be "
+	. "a bug in Mail::Mailer::test", $tests;
     ok(write_config, "Write config files") 
 	or skip 'Failed to write config files (FATAL)', $tests--;
     use_ok('Mail::Abuse::Processor::Mailer') or
@@ -118,12 +138,6 @@ SKIP:
 
     ok($rep, "Mail::Abuse::Report created");
 
-				# We need out STDOUT into a scalar so
-				# that we can easily check the output...
-
-    my $SH = new IO::Scalar \$stdout;
-    *STDOUT = $SH;
-
 				# The first test round, verifies the
 				# modules using ::Normalize...
 
@@ -132,9 +146,13 @@ SKIP:
 
     for my $m (@msgs)
     {
-	$stdout = '';
-	my $r;
+	my $r;	
+	stdout_reset;
 	eval { $r = $rep->next; };
+	my $stdout = capture;
+	diag '>>>' . $stdout . '<<<';
+	die;
+	diag "Output is {$stdout}\n";
 	ok($stdout =~ m/^Errors-To: this_is_the_mailer_errors_to_address$/m,
 	   "Errors-To: header looks ok");
 	ok($stdout =~ m/^Reply-To: this_is_the_mailer_reply_to_address$/m,

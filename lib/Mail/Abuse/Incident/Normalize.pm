@@ -12,7 +12,7 @@ use base 'Mail::Abuse::Incident';
 
 				# The code below should be in a single line
 
-our $VERSION = do { my @r = (q$Revision: 1.6 $ =~ /\d+/g); sprintf " %d."."%03d" x $#r, @r };
+our $VERSION = do { my @r = (q$Revision: 1.7 $ =~ /\d+/g); sprintf " %d."."%03d" x $#r, @r };
 
 =pod
 
@@ -156,7 +156,7 @@ sub parse
     $self->html_parser(undef);
     $parser->filer->purge;
 
-    return unless $rep->body and length $ {$rep->body};
+    return unless $rep->body and $ {$rep->body};
 
 				# Phase 2 - This might be actually a
 				# reply of forward. Remove any

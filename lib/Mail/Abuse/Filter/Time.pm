@@ -12,7 +12,7 @@ use base 'Mail::Abuse::Filter';
 
 				# The code below should be in a single line
 
-our $VERSION = do { my @r = (q$Revision: 1.7 $ =~ /\d+/g); sprintf " %d."."%03d" x $#r, @r };
+our $VERSION = do { my @r = (q$Revision: 1.9 $ =~ /\d+/g); sprintf " %d."."%03d" x $#r, @r };
 
 =pod
 
@@ -46,6 +46,13 @@ L<Date::Manip>.
 
 If this is not specified, the default is to ignore incidents that
 happened more than 96 hours in the past (ie, "96 hours ago").
+
+=item B<filter after>
+
+Incidents newer than the specified time will be removed from the
+report and not considered. Normally, this time specification should be
+specified as a relative date (ie, "in 48 hours" which is the
+default). This is useful to discard events that occur in the future.
 
 =item B<filter local timezone>
 
@@ -85,7 +92,8 @@ sub criteria
 
     unless ($self->before)
     {
-	my $date;
+	my $date_before;
+	my $date_after;
 
 	Date_Init("TZ=" . ($rep->config->{'filter local timezone'} || 'UTC'));
 
@@ -93,29 +101,59 @@ sub criteria
 	{
 	    if (ref $rep->config->{'filter before'} eq 'ARRAY')
 	    {
-		$date = ParseDate(join(' ', 
-				       @{$rep->config->{'filter before'}}));
+		$date_before = 
+		    ParseDate(join(' ', 
+				   @{$rep->config->{'filter before'}}));
 	    }
 	    else {
-		$date = ParseDate($rep->config->{'filter before'} 
-				  || "96 hours ago");
+		$date_before = 
+		    ParseDate($rep->config->{'filter before'} 
+			      || "96 hours ago");
+	    }
+
+	    if (ref $rep->config->{'filter after'} eq 'ARRAY')
+	    {
+		$date_after = 
+		    ParseDate(join(' ', 
+				   @{$rep->config->{'filter after'}}));
+	    }
+	    else {
+		$date_after = 
+		    ParseDate($rep->config->{'filter after'} 
+			      || "in 48 hours");
 	    }
 	};
 
 	warn "Parsing said: $@" if $@ and $rep->config->{'debug time filter'};
-	die "Filter::Time: Cannot parse 'filter before' date\n" unless $date;
-	$self->before(UnixDate($date, '%s'));
+	die "Filter::Time: Cannot parse 'filter before' date\n" 
+	    unless $date_before;
+	die "Filter::Time: Cannot parse 'filter after' date\n" 
+	    unless $date_after;
+	$self->before(UnixDate($date_before, '%s'));
+	$self->after(UnixDate($date_after, '%s'));
 	die "Filter::Time: Times before the epoch are not supported" 
 	    if $self->before < 0;
 	
 	warn "Filter::Time: Removing incidents older than ", $self->before, 
 	"\n" if $rep->config->{'debug time filter'};
+	warn "Filter::Time: Removing incidents newer than ", $self->after, 
+	"\n" if $rep->config->{'debug time filter'};
     }
 
     if ($inc->time and $self->before and $inc->time < $self->before)
     {
-	warn "Filter::Time - discard ", $inc->time, "\n" 
+	warn "Filter::Time - discard before ", $inc->time, "\n" 
 	    if $rep->config->{'debug time filter'};
+	$rep->filtered(0) unless $rep->filtered;
+	$rep->filtered($rep->filtered + 1);
+	return;
+    }
+    elsif ($inc->time and $self->after and $inc->time > $self->after)
+    {
+	warn "Filter::Time - discard after ", $inc->time, "\n" 
+	    if $rep->config->{'debug time filter'};
+	$rep->filtered(0) unless $rep->filtered;
+	$rep->filtered($rep->filtered + 1);
 	return;
     }
 

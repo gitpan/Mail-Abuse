@@ -12,7 +12,7 @@ use base 'Mail::Abuse::Incident';
 
 				# The code below should be in a single line
 
-our $VERSION = do { my @r = (q$Revision: 1.8 $ =~ /\d+/g); sprintf " %d."."%03d" x $#r, @r };
+our $VERSION = do { my @r = (q$Revision: 1.11 $ =~ /\d+/g); sprintf " %d."."%03d" x $#r, @r };
 
 =pod
 
@@ -65,24 +65,34 @@ sub parse
 	$text = $rep->body;
 	my $xmailer = $rep->header->get('X-Mailer') || '';
 	my $subject = $rep->header->get('Subject') || '';
+	#warn "# Match 1.a: normalized\n";
 	return unless $xmailer =~ m!http://(www\.)?spamcop.net!;
+	#warn "# Match 1.b: normalized\n";
 	return unless $subject =~ m!\[SpamCop!;
+	#warn "# Match 1: normalized\n";
     }
     else
     {
 	$text = $rep->text;
-	return unless $$text =~ m!^X-Mailer: http://(www\.)?spamcop.net/!m;
+	#warn "# Match 1.a: non-normalized\n";
+	return unless $$text =~ m!^X-Mailer: http://(www\.)?spamcop.net/!m
+	    or $$text =~ m!^X-SpamCop-sourceip: !m;
+	#warn "# Match 1.b: non-normalized\n";
 	return unless $$text =~ m!^Subject: .*\[SpamCop!m;
-	return unless $$text =~ /- SpamCop/m;
+	#warn "# Match 1.c: non-normalized\n";
+	return unless $$text =~ /[-\[] SpamCop/m;
+	#warn "# Match 1: non-normalized\n";
     }
 
     return unless $$text =~ m!This message is brief!m;
 
-    if ($$text =~ m!Email from (\d+\.\d+\.\d+\.\d+) / (.+)!)
+    if ($$text =~ m!Email from (\d+\.\d+\.\d+\.\d+)\s+/\s+(.+)!)
     {
 	my $ip		= new NetAddr::IP $1;
 	my $date	= $2;
 	return unless $ip;
+
+	#warn "# Match 2: ip=$ip date=$date\n";
 
 	# Remove truncated timezones
 	$date =~ s/\([^\)]+$//;
@@ -95,9 +105,10 @@ sub parse
 	$i->time($date);
 	$i->type('spam/SpamCop');
 	
-	$$text =~ m!(^http://spamcop.net/w3m.+)\s*$!m;
+	$$text =~ m!(^http://(www\.)?spamcop.net/w3m.+)\s*$!m;
 	
 	$i->data($1 || 'no data');
+	#warn "# Created incident $i\n";
 	push @ret, $i;
     }
 

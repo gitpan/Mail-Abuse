@@ -1,5 +1,5 @@
 
-# $Id: store.t,v 1.5 2003/10/31 18:52:41 lem Exp $
+# $Id: store.t,v 1.6 2003/11/11 15:33:55 lem Exp $
 
 use Storable;
 use IO::File;
@@ -137,8 +137,6 @@ SKIP:
     isa_ok($stored, ref $rep, "Proper type restored");
     is_deeply($stored, $rep, "Exact same structure restored");
 }
-
-
 
 
 

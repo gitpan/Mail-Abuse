@@ -16,7 +16,7 @@ use constant OUTSIDE	=> 'source ip outside';
 
 				# The code below should be in a single line
 
-our $VERSION = do { my @r = (q$Revision: 1.4 $ =~ /\d+/g); sprintf " %d."."%03d" x $#r, @r };
+our $VERSION = do { my @r = (q$Revision: 1.6 $ =~ /\d+/g); sprintf " %d."."%03d" x $#r, @r };
 
 =pod
 
@@ -75,6 +75,9 @@ incident should be handled or false otherwise. This function will be
 generally called by the C<Mail::Abuse::Report> object when requested
 to filter its events.
 
+The key C<filtered> in the C<Mail::Abuse::Report> object will be
+incremented for each incident removed.
+
 =cut
 
 sub criteria
@@ -85,12 +88,13 @@ sub criteria
 
     if (!$self->within and $rep->config->{&WITHIN})
     {
-	unless (ref $rep->config->{&WITHIN} eq 'ARRAY')
-	{
-	    $rep->config->{&WITHIN} = [ $rep->config->{&WITHIN} ];
-	}
+#  	unless (ref $rep->config->{&WITHIN} eq 'ARRAY')
+#  	{
+#  	    $rep->config->{&WITHIN} = [ $rep->config->{&WITHIN} ];
+#  	}
 	$self->within([]);
-	for my $ip (map { new NetAddr::IP $_ } @{$rep->config->{&WITHIN}})
+	for my $ip (map { new NetAddr::IP $_ } 
+		    split m/[\s,]+/, $rep->config->{&WITHIN})
 	{
 	    unless ($ip)
 	    {
@@ -107,12 +111,13 @@ sub criteria
 
     if (!$self->outside and $rep->config->{&OUTSIDE})
     {
-	unless (ref $rep->config->{&OUTSIDE} eq 'ARRAY')
-	{
-	    $rep->config->{&OUTSIDE} = [ $rep->config->{&OUTSIDE} ];
-	}
+#  	unless (ref $rep->config->{&OUTSIDE} eq 'ARRAY')
+#  	{
+#  	    $rep->config->{&OUTSIDE} = [ $rep->config->{&OUTSIDE} ];
+#  	}
 	$self->outside([]);
-	for my $ip (map { new NetAddr::IP $_ } @{$rep->config->{&OUTSIDE}})
+	for my $ip (map { new NetAddr::IP $_ } 
+		    split /[\s,]+/, $rep->config->{&OUTSIDE})
 	{
 	    unless ($ip)
 	    {
@@ -145,6 +150,8 @@ sub criteria
 	{
 	    warn "Filter::IP: 'within' clause denies " . $inc->ip . "\n"
 		if $rep->config->{&DEBUG};
+	    $rep->filtered(0) unless $rep->filtered;
+	    $rep->filtered($rep->filtered + 1);
 	    return;
 	}
     }

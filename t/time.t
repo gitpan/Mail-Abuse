@@ -1,5 +1,5 @@
 
-# $Id: time.t,v 1.3 2003/10/02 00:02:20 lem Exp $
+# $Id: time.t,v 1.4 2004/02/06 23:04:40 lem Exp $
 
 use IO::File;
 use Test::More;
@@ -15,10 +15,13 @@ use base 'Mail::Abuse::Incident';
 sub parse
 {
     my @incidents = ();
-    push @incidents, new myIncident for (0 .. 2);
+    push @incidents, new myIncident for (0 .. 4);
     $incidents[0]->time(1000);
     $incidents[1]->time(time - 5);
     $incidents[2]->time(time - 120);
+    $incidents[3]->time(time + 11 * 3600);
+    $incidents[4]->time(time + 12 * 3600);
+#    print "# incident ", $_->time, "\n" for @incidents;
     return @incidents;
 }
 package main;
@@ -43,8 +46,9 @@ sub write_config
     return undef unless $fh;
     return undef unless print $fh <<EOF;
 # This is a config file
+# debug time filter: on
 filter before: $_[0]
-#debug time filter: on
+filter after: $_[1]
 EOF
     ;
     return $fh->close;
@@ -65,7 +69,7 @@ SKIP:
     $loaded = 0;
 
     skip "Failed to create dummy config $config: $!\n", $tests,
-	unless write_config("96 hours ago");
+	unless write_config("96 hours ago", "in 10 hours");
 
     my $rep = new Mail::Abuse::Report 
 	(config		=> $config,
@@ -81,7 +85,7 @@ SKIP:
     is(scalar @{$rep->incidents}, 2, "Correct number of incidents filtered");
 
     skip "Failed to create dummy config $config: $!\n", $tests - 2,
-	unless write_config("60 seconds ago");
+	unless write_config("60 seconds ago", "in 10 hours");
 
     $rep = new Mail::Abuse::Report 
 	(config		=> $config,
@@ -96,10 +100,3 @@ SKIP:
     $rep->next;
     is(scalar @{$rep->incidents}, 2, "Correct number of incidents filtered");
 }
-
-
-
-
-
-
-

@@ -1,5 +1,5 @@
 
-# $Id: received.t,v 1.1 2003/10/31 05:27:53 lem Exp $
+# $Id: received.t,v 1.2 2004/01/29 18:59:41 lem Exp $
 
 use Test::More;
 use Data::Dumper;
@@ -191,4 +191,34 @@ X-Mailer: http://spamcop.net/ v1.3.3
 > kj1ac8n2p37f -->e</a>
 > <!-- k1i1ro10kko6kj -->
 > </html>
+*EOM
+Return-Path: <999999999@bounces.spamcop.net>
+Received: from sauron.julianhaight.com (sauron.julianhaight.com
+    [216.127.43.85]) by rs26s3.datacenter.cha.somewhere.else (8.12.9/8.12.6/3.0)
+    with SMTP id h5K0Eg4X029360 for <abuso@somewhere.else>; Thu, 19 Jun 2003
+    20:14:43 -0400
+Received: (qmail 30067 invoked from network); 20 Jun 2003 00:14:32 -0000
+Received: from localhost (HELO spamcop.net) (127.0.0.1) by
+    sauron.julianhaight.com with SMTP; 20 Jun 2003 00:14:32 -0000
+From: 999999999@reports.spamcop.net
+To: abuso@somewhere.else
+Subject: [SpamCop (10.0.0.1) id:999999999]these gals want your [0cK!
+Precedence: list
+Message-Id: <999999999@admin.spamcop.net>
+Date: Thu, 19 Jun 2003 17:34:13 -0400
+X-Spamcop-Sourceip:
+X-Mailer: http://spamcop.net/ v1.3.3
+
+Received: from [204.204.204.204] by daver.bungi.com via sendmail with smtp;
+ Thu, 19 Jun 2003 17:34:24 -0400
+Received: from [10.0.0.1] (helo=ibm.com)
+ by relay.victim.net with smtp (Exim 3.34 #2) id 19T72p-0004wF-00
+ for x; Thu, 19 Jun 2003 17:34:13 -0400
+Message-ID: <14du$491k4kcav4gg94y@v5y3wqiz.49k>
+From: "Tanner Hurt" <39ovqraq@msn.com>
+Reply-To: "Tanner Hurt" <39ovqraq@msn.com>
+To: <removed>
+Subject: News: Medical News for Men
+Date: Sun, 02 Nov 2003 19:26:13 -0300
+
 *EOM

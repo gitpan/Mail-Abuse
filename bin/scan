@@ -3,14 +3,14 @@
 use strict;
 use warnings;
 
-# $Id: scan,v 1.5 2003/11/03 16:35:51 lem Exp $
+# $Id: scan,v 1.7 2004/02/16 16:59:19 lem Exp $
 
 use Mail::RBL;
 use Pod::Usage;
 use Getopt::Std;
 use NetAddr::IP;
 
-our $VERSION = do { my @r = (q$Revision: 1.5 $ =~ /\d+/g); sprintf " %d."."%03d" x $#r, @r };
+our $VERSION = do { my @r = (q$Revision: 1.7 $ =~ /\d+/g); sprintf " %d."."%03d" x $#r, @r };
 
 =pod
 
@@ -97,7 +97,6 @@ my %rbl = (
 	   'maps-rbl'	=> Mail::RBL->new('blackholes.mail-abuse.org'),
 	   'maps-dul'	=> Mail::RBL->new('dialups.mail-abuse.org'),
 	   'maps-rss'	=> Mail::RBL->new('relays.mail-abuse.org'),
-	   'sbl'	=> Mail::RBL->new('sbl.spamhaus.org'),
 	   'spews'	=> Mail::RBL->new('spews.bl.reynolds.net.au'),
 	   'spews-l1'	=> Mail::RBL->new('l1.spews.dsnbl.sorbs.net'),
 	   'spews-l2'	=> Mail::RBL->new('l2.spews.dnsbl.sorbs.net'),
@@ -107,7 +106,7 @@ my %rbl = (
 	   'intersil'	=> Mail::RBL->new('blackholes.intersil.net'),
 	   'blars'	=> Mail::RBL->new('block.blars.org'),
 	   'spamcop'	=> Mail::RBL->new('bl.spamcop.net'),
-	   'easynet-or'	=> Mail::RBL->new('blackholes.easynet.net'),
+#	   'easynet-or'	=> Mail::RBL->new('blackholes.easynet.net'),
 	   'jippg'	=> Mail::RBL->new('mail-abuse.blacklist.jippg.org'),
 	   'leadmon'	=> Mail::RBL->new('spamguard.leadmon.net'),
 	   'kithrup'	=> Mail::RBL->new('3y.spam.mrs.kithrup.com'),
@@ -172,7 +171,7 @@ my %rbl = (
 	   'kropka-or'	=> Mail::RBL->new('or.rbl.kropka.net'),
 	   'visi-relay'	=> Mail::RBL->new('relays.visi.com'),
 	   'blitzed-op'	=> Mail::RBL->new('opm.blitzed.org'),
-	   'pss'	=> Mail::RBL->new('pss.spambusters.com.ar'),
+	   'pss'	=> Mail::RBL->new('pss.spambusters.org.ar'),
 	   'jippg-dul'	=> Mail::RBL->new('dialup.blacklist.jippg.org'),
 	   'pdl'	=> Mail::RBL->new('dialups.visi.com'),
 	   'dul.ru'	=> Mail::RBL->new('dul.ru'),
@@ -180,6 +179,8 @@ my %rbl = (
 	   'ybl'	=> Mail::RBL->new('ybl.megacity.org'),
 	   'vbl'	=> Mail::RBL->new('vnl.mookystick.com'),
 	   'korea'	=> Mail::RBL->new('korea.services.net'),
+	   'sbl-spamhaus'	=> Mail::RBL->new('sbl.spamhaus.org'),
+	   'xbl-spamhaus'	=> Mail::RBL->new('sbl.spamhaus.org'),
 	   'flowgo-away'	=> Mail::RBL->new('flowgoaway.com'),
 	   'blackholes-us'	=> Mail::RBL->new('blackholes.us'),
 	   'kropka-form'	=> Mail::RBL->new('form.rbl.kropka.net'),
@@ -209,16 +210,20 @@ my %rbl = (
 	   'reynolds-rdts'	=> Mail::RBL->new('rdts.bl.reynolds.net.au'),
 	   'sorbs-proxy'	=> Mail::RBL->new('misc.dnsbl.sorbs.net'),
 	   'sorbs-socks'	=> Mail::RBL->new('socks.dnsbl.sorbs.net'),
-	   'easynet-dynablock'	=> Mail::RBL->new('dynablock.easynet.nl'),
+#	   'easynet-dynablock'	=> Mail::RBL->new('dynablock.easynet.nl'),
+	   'sorbs-dul'		=> Mail::RBL->new('dul.dnsbl.sorbs.net'),
+	   'sorbs-dnsbl'	=> Mail::RBL->new('dnsbl.sorbs.net'),
 	   'always-blocked'	=> Mail::RBL->new('ipv.fahq2.com'),
 	   'cluecentral-satos'	=> Mail::RBL->new('satos.rbl.cluecentral.net'),
 	   'kundenserver'	=> Mail::RBL->new('relays.bl.kundenserver.de'),
+	   'monkeys-upl'	=> Mail::RBL->new('proxies.relays.monkeys.com'),
 	   'arix-slip-f'	=> Mail::RBL->new('fresh.sa_slip.rbl.arix.com'),
 	   'arix-slip-s'	=> Mail::RBL->new('stale.sa_slip.rbl.arix.com'),
-	   'easynet-proxy'	=> Mail::RBL->new('proxies.blackholes.easynet.nl'),
+#	   'easynet-proxy'	=> Mail::RBL->new('proxies.blackholes.easynet.nl'),
 	   'jippg-dulnj'	=> Mail::RBL->new('jp.dialup.blacklist.jippg.org'),
 	   'jippg-duljp'	=> Mail::RBL->new('non-jp.dialup.blacklist.jippg.org'),
 	   'carrot-and-stick'	=> Mail::RBL->new('reject.the-carrot-and-the-stick.com'),
+	   'sbl+xbl-spamhaus'	=> Mail::RBL->new('sbl-xbl.spamhaus.org'),
 	   'completewhois-bogons'	=> Mail::RBL->new('bogons.dnsiplists.completewhois.com'),
 	   'completewhois-hijacked'	=> Mail::RBL->new('hijacked.dnsiplists.completewhois.com'),
 	   );
@@ -228,6 +233,7 @@ print "Scanning arguments against ", scalar keys %rbl, " RBLs\n"
 
 for my $ip (map { NetAddr::IP->new($_)->hostenum } @ARGV)
 {
+    my $matched = 0;
     local $| = 1;
     for my $rbl (sort keys %rbl)
     {
@@ -240,10 +246,11 @@ for my $ip (map { NetAddr::IP->new($_)->hostenum } @ARGV)
 	}
 	elsif ($opt_v)
 	{
-	    print $ip->addr, " is NOT listed in $rbl\n"; 
+	    print $ip->addr, " is NOT listed in $rbl\n";
 	}
+	++ $matched;
     }
-    sleep $opt_d if $opt_d;
+    sleep $opt_d if $opt_d and $matched;
 }
 
 __END__
@@ -261,8 +268,9 @@ you need:
     scan -M 'blars|jamm|jippg|squawk|uu.se|xbl' 10.10.10.0/24
 
 The usage of -M in the example, excludes the named lists as they seem
-to be too agressive for our purposes, at least in our country's
-networks.
+to be too agressive for our purposes, at least in the networks from
+our country.
+
 
 =head1 HISTORY
 

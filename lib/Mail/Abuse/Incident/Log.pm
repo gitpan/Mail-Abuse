@@ -12,7 +12,7 @@ use base 'Mail::Abuse::Incident';
 
 				# The code below should be in a single line
 
-our $VERSION = do { my @r = (q$Revision: 1.7 $ =~ /\d+/g); sprintf " %d."."%03d" x $#r, @r };
+our $VERSION = do { my @r = (q$Revision: 1.14 $ =~ /\d+/g); sprintf " %d."."%03d" x $#r, @r };
 
 =pod
 
@@ -31,8 +31,39 @@ Mail::Abuse::Incident::Log - Parses generic logs into Mail::Abuse::Reports
 =head1 DESCRIPTION
 
 This class parses generic logs that include a timestamp and an IP
-address in the same line. The following functions are provided for the
-customization of the behavior of the class.
+address in the same group of lines. Various configuration keys can
+influence the way this module works, as follows:
+
+=over
+
+=item B<log lines>
+
+Controls how many consecutive lines to attempt a match on. More lines
+generally means more incidents parsed, but might lead to false
+matches. Its default value is 5 lines, which seems to work well
+enough. This should vary widely by site.
+
+=cut
+
+use constant LINES => 'log lines';
+
+=pod
+
+=item B<debug log>
+
+When set to a true value, produces some debugging information sent
+through C<warn()>.
+
+=back
+
+=cut
+
+use constant DEBUG => 'debug log';
+
+=pod
+
+The following functions are provided for the customization of the
+behavior of the class.
 
 =cut
 
@@ -96,16 +127,13 @@ sub _add_ip ($$)
 #    warn "# _add_ip $_[1], ret=", scalar @{$_[0]}, "\n";
 }
 
-sub _add_time ($$$)
+sub _add_time ($$)
 {
-    my $time = str2time($_[1], $_[2]) or return;
-
     for (@{$_[0]})
     {
-	return if $_ == $time;
+	return if $_ == $_[1]->[1];
     }
-    push @{$_[0]}, $time;
-#    warn "# _add_time $_[1] $_[2], ret=", scalar @{$_[0]}, "\n";
+    push @{$_[0]}, $_[1]->[1];
 }
 
 sub parse
@@ -117,11 +145,12 @@ sub parse
     my $count = 0;
 
     my $text = undef;
-    my $lines = ($rep->config ? $rep->config->{'log lines'} : '') || 5;
+    my $lines = ($rep->config ? $rep->config->{&LINES} : '') || 5;
+    my $debug = ($rep->config ? $rep->config->{&DEBUG} : 0);
+
+    $lines --;
 
     my $subtype;
-
-#    $lines --;
 
     if ($rep->normalized)
     {
@@ -129,7 +158,18 @@ sub parse
     }
     else
     {
-	$text = $rep->text;
+				# Skip the report headers and focus
+				# on the offender's
+
+	if ($ {$rep->text} =~ m!^\s*\n(.*)!xms)
+	{
+	    my $t = $1;
+	    $text = \$t;
+	}
+	else
+	{
+	    $text = $rep->text; 
+	}
     }
 
     return unless $$text;
@@ -142,13 +182,38 @@ sub parse
 	or $$text =~ m/^(virus|scan|ids|intrussion|worm|firewall)$/mi)
     {
 	$subtype = 'network';
+	warn "M::A::I::Log: subtype is $subtype due to keyword '$1'\n"
+	    if $debug;
     }
-    elsif ($$text =~ m/\W(copyright|infringement|rights|media)\W/i
-	   or $$text =~ m/^(copyright|infringement|rights|media)\W/mi
-	   or $$text =~ m/\W(copyright|infringement|rights|media)$/mi
-	   or $$text =~ m/^(copyright|infringement|rights|media)$/mi)
+    elsif ($$text =~ m/\W(copyright infringement
+			  |rights|media|kazaa|DMCA
+			  |Digital Millenium Copyright Act
+			  |copyrighted)\W/ix
+	   or $$text =~ m/^(copyright infringement
+			    |rights|media|kazaa|DMCA
+			    |Digital Millenium Copyright Act
+			    |copyrighted)\W/mix
+	   or $$text =~ m/\W(copyright infringement
+			     |rights|media|kazaa|DMCA
+			     |Digital Millenium Copyright Act
+			     |copyrighted)$/mix
+	   or $$text =~ m/^(copyright infringement
+			    |rights|media|kazaa|DMCA
+			    |Digital Millenium Copyright Act
+			    |copyrighted)$/mix)
     {
 	$subtype = 'copyright';
+	warn "M::A::I::Log: subtype is $subtype due to keyword '$1'\n"
+	    if $debug;
+    }
+    elsif ($$text =~ m/\W(proxy|socks|squid)\W/i
+	   or $$text =~ m/^(proxy|socks|squid)\W/mi
+	   or $$text =~ m/\W(proxy|socks|squid)$/mi
+	   or $$text =~ m/^(proxy|socks|squid)$/mi)
+    {
+	$subtype = 'proxy';
+	warn "M::A::I::Log: subtype is $subtype due to keyword '$1'\n"
+	    if $debug;
     }
     elsif ($$text =~ m/\W(spam|uce|unsolicited|mass)\W/i
 	   or $$text =~ m/^(spam|uce|unsolicited|mass)\W/mi
@@ -156,10 +221,14 @@ sub parse
 	   or $$text =~ m/^(spam|uce|unsolicited|mass)$/mi)
     {
 	$subtype = 'spam';
+	warn "M::A::I::Log: subtype is $subtype due to keyword '$1'\n"
+	    if $debug;
     }
     else
     {
 	$subtype = '*';
+	warn "M::A::I::Log: subtype is $subtype due to no keyword\n"
+	    if $debug;
     }
 
     my @time;			# List of timestamps
@@ -170,55 +239,144 @@ sub parse
 	$$text =~ m!^!g;
 	$$text =~ m!(([^\n]*\n){$skip,$skip})!g;
 
-#	warn ((map { s/^/\# skip $skip>/m; $_ . "\n" } split (/\n/, $1)), "# ***\n");
-	
 	while ($$text =~ m!^(([^\n]*\n)(([^\n]*\n){0,$lines})?)!mg)
 	{
-
-#	    warn "# clear \@time and \@addr\n" if @time or @addr;
 
 	    @time = ();
 	    @addr = ();
 
+				# Get candidate timestamps here first
+				# to get rid of false matches
+
+	    my @candidates	= ();
+	    my @passed		= ();
+
 	    my $line = $1;
-#	    warn ((map { s/^/\# /; $_ . "\n" } split (/\n/, $line)), "\n# ***\n");
 
 	    _add_ip \@addr, $1 while $line =~ m/(\d+\.\d+\.\d+\.\d+)/g;
 
-				# dd:mm:yyyyyThh:mm:ss.ssss
-	    _add_time \@time, $1, $rep->tz
-		while $line =~ m/(\d+[:-]\d+[:-]\d+T[\d:\.]+)/g;
-				# day,  5 Oct 2000 hh:mm:ss: +0700
-	    _add_time \@time, $1, $rep->tz 
-		while $line =~ m/((\w+,\s+)?\d+\s\w+\s\d+\s[\d:]+(\s[-+]?\w+)?)/g;
-	    _add_time \@time, $1, $rep->tz 
-		while $line =~ m!(\d+[/-]\d+[/-]\d+\s+\d+:\d+:\d+)!g;
-	    _add_time \@time, $1, $rep->tz 
-		while $line =~ m!(\d+[/-]\w+[/-]\d+\s+\d+:\d+:\d+)!g;
-	    _add_time \@time, $1, $rep->tz 
-		while $line =~ m!(\w+\s+\w+\s+\d+\s+\d+:\d+:\d+\s+\w+\s+\d+)!g; 
-	    _add_time \@time, $1, $rep->tz 
-		while $line =~ m!((\w+\s)?\w+\s+\d+\s\d+:\d+:\d+(\s\d+)?)!g; 
+	    while ($line =~ m/(\d+[:-]\d+[:-]\d+T[\d:\.]+)/g)
+	    {
+		my $p = str2time($1, $rep->tz) || next;
+		warn "M::A::I::Log: matched [1] date $1 (" . 
+		    scalar localtime($p) . ")\n" if $debug;
+		push @candidates, [ $1, $p ];
+	    }
+
+	    while ($line =~ m/((\w{3},\s+)?\d+\s+\w+\s+\d+\s+[\d:]+(\s[-+]?[A-Z0-9]+)?)/g)
+	    {
+		my $p = str2time($1, $rep->tz) || next;
+		warn "M::A::I::Log: matched [2] date $1 (" . 
+		    scalar localtime($p) . ")\n" if $debug;
+		push @candidates, [ $1, $p ];
+	    }
+
+	    while ($line =~ m!(\d+[/-]\d+[/-]\d+\s+\d+:\d+:\d+)!g)
+	    {
+		my $p = str2time($1, $rep->tz) || next;
+		warn "M::A::I::Log: matched [3] date $1 (" . 
+		    scalar localtime($p) . ")\n" if $debug;
+		push @candidates, [ $1, $p ];
+	    }
+
+	    while ($line =~ m!(\d+[/-]\w+[/-]\d+\s+\d+:\d+:\d+)!g)
+	    {
+		my $p = str2time($1, $rep->tz) || next;
+		warn "M::A::I::Log: matched [4] date $1 (" . 
+		    scalar localtime($p) . ")\n" if $debug;
+		push @candidates, [ $1, $p ];
+	    }
+
+	    while ($line =~ m!(\w+\s+\w+\s+\d+\s+\d+:\d+:\d+\s+\w+\s+\d+)!g)
+	    {
+		my $p = str2time($1, $rep->tz) || next;
+		warn "M::A::I::Log: matched [5] date $1 (" . 
+		    scalar localtime($p) . ")\n" if $debug;
+		push @candidates, [ $1, $p ];
+	    }
+
+	    while ($line =~ m!((\w{3}\s)?\w{3}\s\d+\s\d+:\d+:\d+(\s\d+)?)!g)
+	    {
+		my $p = str2time($1, $rep->tz) || next;
+		warn "M::A::I::Log: matched [6] date $1 (" . 
+		    scalar localtime($p) . ")\n" if $debug;
+		push @candidates, [ $1, $p ];
+	    }
+	    
+ 	    while ($line =~ m/(\w+,\s+\d+\s+\d+\s+\d+:\d+:\d+\s+((AM|PM)?\s*[-+]?[A-Z0-9]+)?)/g)
+ 	    {
+ 		my $p = str2time($1, $rep->tz) || next;
+ 		warn "M::A::I::Log: matched [7] date $1 (" . 
+		    scalar localtime($p) . ")\n" if $debug;
+ 		push @candidates, [ $1, $p ];
+ 	    }
 
 	    while ($line =~ m!(\d+/\d+)-(\d+:\d+:\d+)!g)
 	    {
-		_add_time (\@time, "$1 $2", $rep->tz);
+		my $p = str2time("$1 $2", $rep->tz) || next;
+		warn "M::A::I::Log: matched [8] date $1 $2 (" . 
+		    scalar localtime($p) . ")\n" if $debug;
+		push @candidates, [ "$1 $2", $p ];
 	    }
-
+	    
 	    while ($line =~ m!Date: (\d+-\d+-\d+), Time: (\d+:\d+:\d+)!g)
 	    {
-		_add_time (\@time, "$1 $2", $rep->tz);
+		my $p = str2time("$1 $2", $rep->tz) || next;
+		warn "M::A::I::Log: matched [9] date $1 $2 (" . 
+		    scalar localtime($p) . ")\n" if $debug;
+		push @candidates, [ "$1 $2", $p ];
 	    }
 
-	    if (@time or @addr)
+	    while ($line =~ m/(\d{2}\s+\w{3}\s+\d{4}\s+\d+:\d\d:\d\d(\s+[-+]?[A-Z0-9]+)?)/g)
 	    {
-#		warn ((map { s/^/\# match:/m; $_ . "\n" } split (/\n/, $line)), "# ***\n");
+		my $p = str2time($1, $rep->tz) || next;
+		warn "M::A::I::Log: matched [10] date $1 (" . 
+		    scalar localtime($p) . ")\n" if $debug;
+		push @candidates, [ $1, $p ];
 	    }
+
+	    while ($line =~ m!(\d+/\w+/\d+)[:/](\d+:\d+:\d+(\s+[-+]?[\d\w]+)?)!g)
+	    {
+		my $p = str2time("$1 $2", $rep->tz) || next;
+		warn "M::A::I::Log: matched [11] date $1 $2(" . 
+		    scalar localtime($p) . ")\n" if $debug;
+		push @candidates, [ "$1 $2", $p ];
+	    }
+
+				# @candidates contain all proto-timestamps
+				# Partial matches are possible, so we must
+				# choose only the longest
+
+#	    warn "passed (before)\n";
+#	    warn "-> $_\n" for @candidates;
+
+	    for my $t (sort { length $a->[0] <=> length $b->[0] } @candidates)
+	    {
+		@passed = grep { index($t, $_->[0]) < 0; } @passed;
+		push @passed, $t
+	    }
+
+#	    warn "passed (after)\n";
+#	    warn "-> $_\n" for @passed;
+
+	    _add_time \@time, $_ for @passed;
+
+#  	    if (@time and @addr)
+#  	    {
+#  		warn "M::A::I::Log: Matches for block [$line] follows:\n"
+#  		    if $debug;
+#  	    }
 
 	    for my $time (@time)
 	    {
-		$self->_push($rep, $_, $time, $line, $subtype, \@ret) 
-		    for @addr;
+		for my $a (@addr)
+		{
+		    my $p = $self->_push($rep, $a, $time, 
+					 $line, $subtype, \@ret);
+		    warn "M::A::I::Log: add incident $a, ", 
+		    scalar localtime $time, "\n"
+			if $p and $debug;
+		}
 	    }
 	}
     }

@@ -1,5 +1,5 @@
 
-# $Id: log.t,v 1.3 2003/11/02 16:04:22 lem Exp $
+# $Id: log.t,v 1.9 2004/02/15 19:00:15 lem Exp $
 
 use Test::More;
 
@@ -47,6 +47,8 @@ SKIP:
     $rep->reader(MyReader->new);
     $rep->filters([]);
     $rep->processors([]);
+    $rep->config({});
+#    $rep->config->{'debug log'} = 1;
 
     $rep->parsers([new Mail::Abuse::Incident::Normalize, 
 		   new Mail::Abuse::Incident::Log]);
@@ -91,7 +93,6 @@ rbooth, 23 Oct 2003 18:13:36 -0400, 10.10.10.10, 17, 137, W32.Opaserv Worm?, 103
 
 
 
-
 23 Oct 2003 18:13:36 popoah: ipfw DENY from 10.10.10.10
 *EOM
 Return-Path: <updatestatusonly@mynetwatchman.com>
@@ -114,7 +115,176 @@ rbooth,
 
 
 
-23 Oct 2003 18:13:36 
+
+23 Oct 2003 18:13:36
 popoah: 
 ipfw DENY from 10.10.10.10
 *EOM
+Return-Path: <updatestatusonly@mynetwatchman.com>
+Message-Id: <200310310151.h9V5555555557770@lidiot.mynetwatchman.com>
+From: myNetWatchman <updatestatusonly@mynetwatchman.com>
+To: "abuse@somewhere.net" <abuse@somewhere.net>
+Errors-To: <mnwbounce@mynetwatchman.com>
+Date: Thu, 30 Oct 2003 20:40 -0400
+X-Msmail-Priority: Normal
+Reply-To: updatestatusonly@mynetwatchman.com
+Subject: myNetWatchman Incident [54049036] Src:(x.x.x.x) Targets:10
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+
+rbooth, 
+23 Oct 2003 18:13:36 -0400, 
+10.10.10.10, 17, 
+137, W32.Opaserv Worm?, 1033, 1
+
+
+
+
+Oct, 23 2003  6:13:36 PM
+popoah: 
+ipfw DENY from 10.10.10.10
+*EOM
+Return-Path: <updatestatusonly@mynetwatchman.com>
+Message-Id: <200310310151.h9V5555555557770@lidiot.mynetwatchman.com>
+From: myNetWatchman <updatestatusonly@mynetwatchman.com>
+To: "abuse@somewhere.net" <abuse@somewhere.net>
+Errors-To: <mnwbounce@mynetwatchman.com>
+Date: Thu, 30 Oct 2003 20:40 -0400
+X-Msmail-Priority: Normal
+Reply-To: updatestatusonly@mynetwatchman.com
+Subject: myNetWatchman Incident [54049036] Src:(x.x.x.x) Targets:10
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+
+rbooth, 
+23 Oct 2003 18:13:36 -0400, 
+10.10.10.10, 17, 
+137, W32.Opaserv Worm?, 1033, 1
+
+
+
+
+Oct, 23 2003 6:13:36 PM
+popoah: 
+ipfw DENY from 10.10.10.10
+*EOM
+Return-Path: <updatestatusonly@mynetwatchman.com>
+Message-Id: <200310310151.h9V5555555557770@lidiot.mynetwatchman.com>
+From: myNetWatchman <updatestatusonly@mynetwatchman.com>
+To: "abuse@somewhere.net" <abuse@somewhere.net>
+Errors-To: <mnwbounce@mynetwatchman.com>
+Date: Thu, 30 Oct 2003 20:40 -0400
+X-Msmail-Priority: Normal
+Reply-To: updatestatusonly@mynetwatchman.com
+Subject: myNetWatchman Incident [54049036] Src:(x.x.x.x) Targets:10
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+
+rbooth, 
+23 Oct 2003 18:13:36 -0400, 
+10.10.10.10, 17, 
+137, W32.Opaserv Worm?, 1033, 1
+
+
+
+
+Tue, 23 Oct 2003 18:13:36 -0400
+popoah: 
+ipfw DENY from 10.10.10.10
+*EOM
+Return-Path: <updatestatusonly@mynetwatchman.com>
+Message-Id: <200310310151.h9V5555555557770@lidiot.mynetwatchman.com>
+From: myNetWatchman <updatestatusonly@mynetwatchman.com>
+To: "abuse@somewhere.net" <abuse@somewhere.net>
+Errors-To: <mnwbounce@mynetwatchman.com>
+Date: Thu, 30 Oct 2003 20:40 -0400
+X-Msmail-Priority: Normal
+Reply-To: updatestatusonly@mynetwatchman.com
+Subject: myNetWatchman Incident [54049036] Src:(x.x.x.x) Targets:10
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+
+end of submission -------------------------------------------------
+Received: from [10.10.10.10] by daver.bungi.com via sendmail with smtp;
+  Tue, 23 Oct 2003 18:13:36 -0400 (EST)
+
+
+
+
+
+Return-Path: Received: from 10.10.10.10 ([10.10.10.10]) by sparc.xsite.tld with QMQP; Oct, 23 2003 06:13:36 PM -0400
+*EOM
+Return-Path: <updatestatusonly@mynetwatchman.com>
+Message-Id: <200310310151.h9V5555555557770@lidiot.mynetwatchman.com>
+From: myNetWatchman <updatestatusonly@mynetwatchman.com>
+To: "abuse@somewhere.net" <abuse@somewhere.net>
+Errors-To: <mnwbounce@mynetwatchman.com>
+Date: Thu, 30 Oct 2003 20:40 -0400
+X-Msmail-Priority: Normal
+Reply-To: updatestatusonly@mynetwatchman.com
+Subject: myNetWatchman Incident [54049036] Src:(x.x.x.x) Targets:10
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+
+end of submission -------------------------------------------------
+Received: from [10.10.10.10] by daver.bungi.com via sendmail with smtp;
+  Tue, 23 Oct 2003 18:13:36 -0400 (EST)
+
+
+
+
+
+Return-Path: Received: from 10.10.10.10 ([10.10.10.10]) by sparc.xsite.tld with QMQP; Oct, 23 2003 6:13:36 PM -0400
+*EOM
+Return-Path: <updatestatusonly@mynetwatchman.com>
+Message-Id: <200310310151.h9V5555555557770@lidiot.mynetwatchman.com>
+From: myNetWatchman <updatestatusonly@mynetwatchman.com>
+To: "abuse@somewhere.net" <abuse@somewhere.net>
+Errors-To: <mnwbounce@mynetwatchman.com>
+Date: Thu, 30 Oct 2003 20:40 -0400
+X-Msmail-Priority: Normal
+Reply-To: updatestatusonly@mynetwatchman.com
+Subject: myNetWatchman Incident [54049036] Src:(x.x.x.x) Targets:10
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+
+end of submission -------------------------------------------------
+Received: from [10.10.10.10] by daver.bungi.com via sendmail with smtp;
+  Tue, 23 Oct 2003 18:13:36 -0400 (EST)
+
+
+
+
+
+Return-Path: Received: from 10.10.10.10 ([10.10.10.10]) by sparc.xsite.tld with QMQP; Oct, 23 2003  6:13:36 PM -0400
+
+*EOM
+Return-Path: <updatestatusonly@mynetwatchman.com>
+Message-Id: <200310310151.h9V5555555557770@lidiot.mynetwatchman.com>
+From: myNetWatchman <updatestatusonly@mynetwatchman.com>
+To: "abuse@somewhere.net" <abuse@somewhere.net>
+Errors-To: <mnwbounce@mynetwatchman.com>
+Date: Thu, 30 Oct 2003 20:40 -0400
+X-Msmail-Priority: Normal
+Reply-To: updatestatusonly@mynetwatchman.com
+Subject: myNetWatchman Incident [54049036] Src:(x.x.x.x) Targets:10
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+
+
+
+10.10.10.10 - - [23/Oct/2003:18:13:36 -0400] "GET / HTTP/1.1" 200 804
+
+
+
+
+
+10.10.10.10 - - [23/Oct/2003:18:13:36 -0400] "GET 
+

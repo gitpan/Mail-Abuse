@@ -5,11 +5,12 @@ require 5.005_62;
 use Carp;
 use strict;
 use warnings;
-use Config::Auto;
+use IO::File;
+# use Config::Auto;
 use Params::Validate qw(:all);
 				# The code below should be in a single line
 
-our $VERSION = do { my @r = (q$Revision: 1.8 $ =~ /\d+/g); sprintf " %d."."%03d" x $#r, @r };
+our $VERSION = do { my @r = (q$Revision: 1.9 $ =~ /\d+/g); sprintf " %d."."%03d" x $#r, @r };
 
 				# Keys that we keep after a flush
 our @Keep = qw/
@@ -185,8 +186,28 @@ sub load_config
 {
     my $self = shift;
     my $config = $self->config;
-    warn "M::A::Report reading config" if $self->debug;
-    eval { $self->config(Config::Auto::parse($config, format => 'colon')) };
+    warn "M::A::Report: reading config" if $self->debug;
+#    eval { $self->config(Config::Auto::parse($config, format => 'colon')) };
+    $self->config({});
+
+    my $fh = new IO::File $config;
+    
+    unless ($fh)
+    {
+	warn "M::A::Report: Failed to open $config: $!\n";
+	return;
+    }
+
+    while (<$fh>)
+    {
+	chomp;
+	s/\#.*$//g;
+	next unless /^([^:]+):\s*(.*)$/;
+	$self->config->{lc $1} = $2;
+    }
+    
+    $fh->close;
+
     warn "Config read: $@\n" if $self->debug;
     return if $@;
     return $self;

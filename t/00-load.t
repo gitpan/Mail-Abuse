@@ -1,5 +1,5 @@
 
-# $Id: 00-load.t,v 1.11 2003/11/07 15:41:27 lem Exp $
+# $Id: 00-load.t,v 1.15 2004/02/05 22:41:50 lem Exp $
 
 use Test::More;
 
@@ -15,8 +15,10 @@ my @modules = qw/
 	Mail::Abuse::Filter::Time
 	Mail::Abuse::Reader::Stdin
 	Mail::Abuse::Incident::Log
+	Mail::Abuse::Processor::Table
 	Mail::Abuse::Processor::Store
 	Mail::Abuse::Processor::Mailer
+	Mail::Abuse::Processor::Radius
 	Mail::Abuse::Incident::SpamCop
 	Mail::Abuse::Incident::Received
 	Mail::Abuse::Incident::Normalize
@@ -31,7 +33,8 @@ use_ok($_) for @modules;
 
 my $checker = 0;
 
-eval { use Test::Pod;
+eval { require Test::Pod;
+     Test::Pod::import();
        $checker = 1; };
 
 for my $m (@modules)

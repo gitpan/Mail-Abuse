@@ -1,6 +1,6 @@
 use ExtUtils::MakeMaker;
 
-# $Id: Makefile.PL,v 1.14 2003/11/08 06:18:43 lem Exp $
+# $Id: Makefile.PL,v 1.25 2004/02/16 17:19:50 lem Exp $
 
 my $checker = 0;
 
@@ -21,7 +21,7 @@ EOT
     ;
 }
 
-eval { use Test::Pod;
+eval { require Test::Pod;
        $checker = 1; };
 
 unless ($checker)
@@ -43,7 +43,7 @@ EOF
 
 $checker = 0;
 
-eval { use IO::Scalar;
+eval { require IO::Scalar;
        $checker = 1; };
 
 unless ($checker)
@@ -64,6 +64,39 @@ EOF
     ;
 }
 
+$checker = 0;
+eval { require URI::URL;
+       require Mail::Mailer;
+       require HTML::Entities;
+       require HTML::LinkExtor;
+       require LWP::RobotUA;
+       $checker = 1; };
+
+unless ($checker)
+{
+    print <<EOF;
+
+Looks like this host does not have a number of modules that are
+required by utilities in the bin/ directory of this
+distribution. Generally, it would be a good idea to install the
+modules by following the recipe given below:
+
+    perl -MCPAN -e shell
+    cpan> install URI::URL
+    cpan> install LWP::RobotUA
+    cpan> install Mail::Mailer
+    cpan> install HTML::Entities
+    cpan> install HTML::LinkExtor
+    cpan> quit
+
+at a nearby shell. The supplied scripts are intended to be useful to
+many audiences. If you have reasons not to install those modules, take
+a look at the scripts and see if they apply to your environment.
+
+EOF
+    ;
+}
+
 WriteMakefile
     (
      'NAME'		=> 'Mail::Abuse',
@@ -71,15 +104,21 @@ WriteMakefile
      'EXE_FILES'	=> [ 'bin/abuso', 
 			     'bin/acat', 
 			     'bin/scan', 
-			     'bin/maps-scan' ],
+			     'bin/requester',
+			     'bin/maps-scan',
+			     'bin/maps-gather',
+			     ],
      'INSTALLSCRIPT'	=> '/usr/local/bin',
      'PREREQ_PM'	=> 
      {
+	 'IO::File'		=> 0,
+	 'IO::Zlib'		=> 0,
 	 'Storable'		=> 0,
-	 'Net::POP3'		=> 0,
+	 'Net::POP3'		=> 2.23, # ->getfh() is required
 	 'Test::More'		=> 0,
 	 'File::Path'		=> 0,
 	 'File::Spec'		=> 0,
+	 'File::Find'		=> 0,
 	 'Date::Parse'		=> 0,
 	 'NetAddr::IP'		=> 3.00,
 	 'Date::Manip'		=> 0,
@@ -89,8 +128,9 @@ WriteMakefile
 	 'MIME::Parser'		=> 0,
 	 'HTML::Parser'		=> 0,
 	 'Mail::Mailer'		=> 0,
-	 'Config::Auto'		=> 0.03,
+#	 'Config::Auto'		=> 0.03,
 	 'Params::Validate'	=> 0,
+	 'Tie::NetAddr::IP'	=> 1.51,
      }, # e.g., Module::Name => 1.1
      ($] >= 5.005 ?    ## Add these new keywords supported since 5.005
       (ABSTRACT_FROM	=> 'lib/Mail/Abuse.pm',
@@ -116,7 +156,9 @@ install ::
 	@echo "  perldoc bin/abuso"
 	@echo "  perldoc bin/acat"
 	@echo "  perldoc bin/scan"
+	@echo "  perldoc bin/requester"
 	@echo "  perldoc bin/maps-scan"
+	@echo "  perldoc bin/maps-gather"
 	@echo 
 	@echo to see it. Please read the documentation of each module 
 	@echo thoroughly before reporting bugs or asking for help.

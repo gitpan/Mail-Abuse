@@ -12,7 +12,7 @@ use base 'Mail::Abuse::Incident';
 
 				# The code below should be in a single line
 
-our $VERSION = do { my @r = (q$Revision: 1.2 $ =~ /\d+/g); sprintf " %d."."%03d" x $#r, @r };
+our $VERSION = do { my @r = (q$Revision: 1.4 $ =~ /\d+/g); sprintf " %d."."%03d" x $#r, @r };
 
 =pod
 
@@ -33,7 +33,24 @@ Mail::Abuse::Incident::Received - Parses Received: headers in an abuse report
 This class parses standard Received: headers included in a given abuse
 report.
 
+Entries in the configuration file can control the behavior of this
+module. The following entries are recognized:
+
 =cut
+
+use constant DEBUG	=> 'debug received';
+
+=pod
+
+=over
+
+=item B<debug received>
+
+When set to a true value, causes some debug information to be produced
+via C<warn()>.
+
+=cut
+
 
 sub _add_time ($$$)
 {
@@ -59,6 +76,12 @@ sub _add_ip ($$)
     push @{$_[0]}, $ip;
 }
 
+=pod
+
+=back
+
+The functions provided by this module, are described below
+
 =over
 
 =item C<parse($report)>
@@ -81,6 +104,10 @@ sub parse
 
     my $text = undef;
 
+    my $debug = $rep->config ? $rep->config->{&DEBUG} : 0;
+
+    warn "M::A::I::Received: debug\n" if $debug;
+
     if ($rep->normalized) 
     { 
 	$text = $rep->body; 
@@ -90,7 +117,7 @@ sub parse
 				# Skip the report headers and focus
 				# on the offender's
 
-	if (${$rep->text} =~ m!^\s*\n(.*)!xms)
+	if ($ {$rep->text} =~ m!^\s*\n(.*)!xms)
 	{
 	    my $t = $1;
 	    $text = \$t;
@@ -101,29 +128,25 @@ sub parse
 	}
     }
 
-    return unless $$text and $$text =~ m!Received: !m;
+    unless ($$text and $$text =~ m!Received: !m)
+    {
+	warn "M::A::I::Received: No Received: headers in sight\n"
+	    if $debug;
+    }
 
-    while ($$text =~ m!^(Received: .*?)(?=([-\w]+: |^\s*$))!msg)
+    while ($$text and $$text =~ m!^(Received: .*?)(?=([-\w]+: |^\s*$))!msg)
     {
 				# Analyze this Received: header
 	my $header = $1;
+
+	warn "M::A::I::Received: Matching header [$header]\n"
+	    if $debug;
 
 	my @a = ();
 	my @t = ();
 				# Add numeric IP addresses
 	_add_ip \@a, $1 while $header =~ m/(\d+\.\d+\.\d+\.\d+)/g;
 
-				# And timezones in various formats
-#  	_add_time \@t, $1, $rep->tz 
-#  	    while $header =~ m/(\d+[:-]\d+[:-]\d+T[\d:\.]+)/g;
-#  	_add_time \@t, $1, $rep->tz 
-#  	    while $header =~ m!(\d+[/-]\d+[/-]\d+\s+\d+:\d+:\d+)!g;
-#  	_add_time \@t, $1, $rep->tz 
-#  	    while $header =~ m!(\d+[/-]\w+[/-]\d+\s+\d+:\d+:\d+)!g;
-#  	_add_time \@t, $1, $rep->tz 
-#  	    while $header =~ m!((\w+\s)?\w+\s\d+\s\d+:\d+:\d+(\s\d+)?)!g; 
-#  	_add_time \@t, $1, $rep->tz 
-#  	    while $header =~ m!(\w+\s+\w+\s+\d+\s+\d+:\d+:\d+\s+\w+\s+\d+)!g; 
 	_add_time \@t, $1, $rep->tz 
 	    while $header =~ m/((\w+,\s+)?\d+\s\w+\s\d+\s[\d:]+\s[-+]?\w+)/g;
 
@@ -136,6 +159,10 @@ sub parse
 		$i->time($t);
 		$i->type('spam/Received');
 		$i->data($header);
+		
+		warn "M::A::I::Received: Add incident for ", $i->ip, ", ",
+		$i->time, "\n" if $debug;
+
 		push @ret, $i;
 	    }
 	}

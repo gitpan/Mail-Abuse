@@ -6,9 +6,11 @@ use Carp;
 use strict;
 use warnings;
 
+use overload '""' => "serialize";
+use overload 'eq' =>  sub { "$_[0]" eq "$_[1]" };
 				# The code below should be in a single line
 
-our $VERSION = do { my @r = (q$Revision: 1.6 $ =~ /\d+/g); sprintf " %d."."%03d" x $#r, @r };
+our $VERSION = do { my @r = (q$Revision: 1.11 $ =~ /\d+/g); sprintf " %d."."%03d" x $#r, @r };
 
 =pod
 
@@ -68,6 +70,9 @@ incident.
 
 =back
 
+Although specific incident parsers are free to define further class
+methodsor information items.
+
 The following functions are provided for the customization of the
 behavior of the class.
 
@@ -87,6 +92,99 @@ sub new
 =pod
 
 =over
+
+=item C<items()>
+
+Enumerates the defined information items that have been defined for
+this object. Essentially, returns a list of the accessor methods. The
+object is overloaded so that this method is invoked automatically when
+serialization is required. This means that
+
+    print $incident, "\n";
+
+Will produce human-readable information.
+
+=cut
+
+sub items
+{
+    my $self = shift;
+    return wantarray ? sort keys %$self : scalar keys %$self;
+}
+
+=pod
+
+=item C<serialize()>
+
+Produces a C<print()>able representation of the Incident object,
+suitable for showing it to a human being.
+
+=cut
+
+sub _helper
+{
+    my $thing = shift;
+
+    if (ref $thing eq 'SCALAR')
+    {
+	return $$thing;
+    }
+    elsif (ref $thing eq 'HASH')
+    {
+	my $ret = '{ ';
+	for my $k (sort keys %$thing)
+	{
+	    $ret .= "$k => ";
+	    $ret .= _helper($thing->{$k});
+	    $ret .= " ";
+	}
+	$ret .= '}';
+	return $ret;
+    }
+    elsif (ref $thing eq 'ARRAY')
+    {
+	my $ret = '[ ';
+	for my $k (0 .. $#$thing)
+	{
+	    $ret .= "$k => ";
+	    $ret .= _helper($thing->[$k]);
+	    $ret .= " ";
+	}
+	$ret .= ']';
+	return $ret;
+    }
+    elsif (ref $thing eq 'NetAddr::IP')
+    {
+	return "$thing";
+    }
+    else
+    {
+	if (defined $thing)
+	{
+	    $thing =~ s/\n/\\n/g;
+	    return $thing;
+	}
+	else
+	{
+	    return 'undef';
+	}
+    }
+}
+
+sub serialize
+{
+    my $self = shift;
+    my $ret = ref($self) . ":";
+    for my $k ($self->items)
+    {
+	no strict 'refs';
+	$ret .= " $k=" . _helper($self->$k);
+    }
+    $ret .= "no further data" unless $ret;
+    return $ret;
+}
+
+=pod
 
 =item C<parse($report)>
 

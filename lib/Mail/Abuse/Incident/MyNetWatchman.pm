@@ -12,7 +12,7 @@ use base 'Mail::Abuse::Incident';
 
 				# The code below should be in a single line
 
-our $VERSION = do { my @r = (q$Revision: 1.1 $ =~ /\d+/g); sprintf " %d."."%03d" x $#r, @r };
+our $VERSION = do { my @r = (q$Revision: 1.2 $ =~ /\d+/g); sprintf " %d."."%03d" x $#r, @r };
 
 =pod
 
@@ -64,6 +64,7 @@ sub parse
     if ($rep->normalized)
     {
 	$text = $rep->body;
+	return unless defined $rep->header->get('Subject');
 	return unless $rep->header->get('Subject') =~ 
 	    m!myNetWatchman Incident!;
     }

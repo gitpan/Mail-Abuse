@@ -9,7 +9,7 @@ require Exporter;
 
 				# The code below should be in a single line
 
-our $VERSION = do { my @r = (q$Revision: 1.3 $ =~ /\d+/g); sprintf " %d."."%03d" x $#r, @r };
+our $VERSION = do { my @r = (q$Revision: 1.18 $ =~ /\d+/g); sprintf " %d."."%03d" x $#r, @r };
 
 "I'm just a placeholder module";
 
@@ -74,6 +74,9 @@ L<Mail::Abuse::Filter> for more information.
 All of the modules take a lot of their configuration information from
 a specially formatted file.
 
+This distribution also includes a number of scripts. See the C<bin/>
+directory for more information.
+
 =head2 EXPORT
 
 None by default.
@@ -81,18 +84,14 @@ None by default.
 
 =head1 HISTORY
 
-=over 8
+$Log: Abuse.pm,v $
+Revision 1.18  2004/02/16 17:20:29  lem
+Freeze for next release
 
-=item 0.01
-
-Original version; created by h2xs 1.2 with options
-
-  -ACOXcfkn
-	Mail::Abuse
-	-v
-	0.01
-
-=back
+Revision 1.17  2004/02/15 19:39:42  lem
+Changes to ::Incident::Log. Added requester. Changed doc structure to
+include the CVS log in the docs, altough this is not that useful for
+this module.
 
 
 =head1 LICENSE AND WARRANTY

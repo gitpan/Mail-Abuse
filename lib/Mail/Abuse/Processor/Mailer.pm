@@ -14,7 +14,7 @@ use constant ANTILOOP	=> 'X-Mail-Abuse-Loop';
 
 				# The code below should be in a single line
 
-our $VERSION = do { my @r = (q$Revision: 1.4 $ =~ /\d+/g); sprintf " %d."."%03d" x $#r, @r };
+our $VERSION = do { my @r = (q$Revision: 1.7 $ =~ /\d+/g); sprintf " %d."."%03d" x $#r, @r };
 
 =pod
 
@@ -211,7 +211,16 @@ sub process
     }
 				# Detect and avoid loops
 
-    my $mailer	= new Mail::Mailer $type, Server => $smtp;
+    my $mailer;
+
+    if (defined $smtp)
+    {
+	$mailer = new Mail::Mailer $type, Server => $smtp;
+    }
+    else
+    {
+	$mailer = new Mail::Mailer $type;
+    }
 
     my %Headers	= (
 		   'X-Mailer'	=> "Mail::Abuse::Processor::Mailer v$VERSION",
