@@ -21,7 +21,7 @@ use constant DEBUG	=> 'debug store';
 
 				# The code below should be in a single line
 
-our $VERSION = do { my @r = (q$Revision: 1.7 $ =~ /\d+/g); sprintf " %d."."%03d" x $#r, @r };
+our $VERSION = do { my @r = (q$Revision: 1.8 $ =~ /\d+/g); sprintf " %d."."%03d" x $#r, @r };
 
 =pod
 
@@ -162,12 +162,20 @@ sub process
 	warn "Store: Failed to create dir $path: $!\n";
 	return;
     }
-	
-    eval 
-    { 
-	nstore($rep, $file) 
-	    || warn "Storable::nstore_fd failed with $!\n";
-    };
+
+    if (-f $file)
+    {
+	warn "Store: $file already exists. Not overriden\n";
+	return 1;
+    }
+    else
+    {
+	eval 
+	{ 
+	    nstore($rep, $file) 
+		|| warn "Storable::nstore_fd failed with $!\n";
+	};
+    }
 
     if ($@)
     {

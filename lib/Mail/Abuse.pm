@@ -9,7 +9,7 @@ require Exporter;
 
 				# The code below should be in a single line
 
-our $VERSION = do { my @r = (q$Revision: 1.19 $ =~ /\d+/g); sprintf " %d."."%03d" x $#r, @r };
+our $VERSION = do { my @r = (q$Revision: 1.21 $ =~ /\d+/g); sprintf " %d."."%03d" x $#r, @r };
 
 "I'm just a placeholder module";
 
@@ -85,6 +85,12 @@ None by default.
 =head1 HISTORY
 
 $Log: Abuse.pm,v $
+Revision 1.21  2004/03/03 21:00:54  lem
+Bump version to install internally.
+
+Revision 1.20  2004/03/01 15:26:29  lem
+Added popfetch
+
 Revision 1.19  2004/02/17 21:50:06  lem
 Updated Mail::Abuse::Incident::MyNetWatchman
 

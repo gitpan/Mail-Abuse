@@ -11,7 +11,7 @@ use NetAddr::IP;
 use base 'Mail::Abuse::Reader';
 				# The code below should be in a single line
 
-our $VERSION = do { my @r = (q$Revision: 1.5 $ =~ /\d+/g); sprintf " %d."."%03d" x $#r, @r };
+our $VERSION = do { my @r = (q$Revision: 1.8 $ =~ /\d+/g); sprintf " %d."."%03d" x $#r, @r };
 
 =pod
 
@@ -52,6 +52,11 @@ The corresponding password.
 =item B<pop3 delete>
 
 Set to a true value to cause messages to be deleted after reading them.
+
+=item B<pop3 filter>
+
+A regular expression that, if matches, discards the current
+message. This is useful to avoid processing bounces.
 
 =item B<pop3 debug>
 
@@ -107,43 +112,71 @@ sub read
 	    return;
 	}
 
+	if ($config->{'pop3 filter'})
+	{
+	    my $re = ref $config->{'pop3 filter'} eq 'ARRAY' ? 
+		join ' ', @{$config->{'pop3 filter'}} : 
+		    $config->{'pop3 filter'};
+	    warn "POP3 filter set to <$re>\n" if $config->{'pop3 debug'};
+	    $self->pop3_filter(qr($re));
+	}
+
 	$self->msg(0) unless defined $self->msg;
     }
 
 				# Here, $self->pop3 is a handle to a
 				# pop3 mailbox...
 
-    my $msg = $self->msg + 1;
-    $self->msg($msg);
+    my $ret = undef;
 
-    warn "POP3 reading message $msg\n" if $config->{'pop3 debug'};
-    my $fh = $self->pop3->getfh($msg);
-
-    if ($fh)
+    while (1)
     {
+	my $msg = $self->msg + 1;
+	$self->msg($msg);
+
+	warn "POP3 reading message $msg\n" if $config->{'pop3 debug'};
+	my $fh = $self->pop3->getfh($msg);
+
+	if ($fh)
+	{
 				# Slurp the whole thing
 				# XXX - It seems that the FH returned
 				# by Net::POP3 does not respect $/
-	local $/;
-	my $text;
-	while (<$fh>)
-	{
-	    $text .= $_;
-	}
-	warn "POP3 read ", length($text), " bytes from server\n"
-	    if $config->{'pop3 debug'};
-	$rep->text(\$text);
-    }
-    else
-    {
-	warn "POP3 no message $msg\n" if $config->{'pop3 debug'};
-	return;
-    }
+	    local $/;
+	    my $text;
+	    while (<$fh>)
+	    {
+		$text .= $_;
+	    }
+	    warn "POP3 read ", length($text), " bytes from server\n"
+		if $config->{'pop3 debug'};
+	    
+	    my $re = $self->pop3_filter();
 
-    if ($config->{'pop3 delete'})
-    {
-	warn "POP3 deleting message $msg\n" if $config->{'pop3 debug'};
-	$self->pop3->delete($msg);
+	    if ($re and $text =~ m/$re/im)
+	    {
+		warn "POP3 skip message $msg\n"
+		    if $config->{'pop3 debug'};
+	    }
+	    else
+	    {
+		$rep->text(\$text);
+		$ret = 1;
+	    }
+	}
+	else
+	{
+	    warn "POP3 no message $msg\n" if $config->{'pop3 debug'};
+	    $ret = undef;
+	    last;
+	}
+
+	if ($config->{'pop3 delete'})
+	{
+	    warn "POP3 deleting message $msg\n" if $config->{'pop3 debug'};
+	    $self->pop3->delete($msg);
+	}
+	last if $ret;
     }
 
 				# XXX - Actually, I would prefer to 
@@ -153,7 +186,7 @@ sub read
     $self->pop3->quit;
     $self->pop3(undef);
 
-    return 1;
+    return $ret;
 }
 
 =over

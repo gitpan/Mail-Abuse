@@ -1,5 +1,5 @@
 
-# $Id: log.t,v 1.10 2004/02/17 11:48:47 lem Exp $
+# $Id: log.t,v 1.11 2004/03/10 20:20:12 lem Exp $
 
 use Test::More;
 
@@ -50,7 +50,7 @@ SKIP:
     $rep->filters([]);
     $rep->processors([]);
     $rep->config({});
-#    $rep->config->{'debug log'} = 1;
+    $rep->config->{'debug log'} = 1;
 
     for my $p ([new Mail::Abuse::Incident::Normalize, 
 		new Mail::Abuse::Incident::Log],
@@ -287,5 +287,27 @@ Content-Transfer-Encoding: 7bit
 
 
 
-10.10.10.10 - - [23/Oct/2003:18:13:36 -0400] "GET 
+10.10.10.10 - - [23/Oct/2003:18:13:36 -0400] "GET "
+*EOM
+Return-Path: <updatestatusonly@mynetwatchman.com>
+Message-Id: <200310310151.h9V5555555557770@lidiot.mynetwatchman.com>
+From: myNetWatchman <updatestatusonly@mynetwatchman.com>
+To: "abuse@somewhere.net" <abuse@somewhere.net>
+Errors-To: <mnwbounce@mynetwatchman.com>
+Date: Thu, 30 Oct 2003 20:40 -0400
+X-Msmail-Priority: Normal
+Reply-To: updatestatusonly@mynetwatchman.com
+Subject: myNetWatchman Incident [54049036] Src:(x.x.x.x) Targets:10
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+
+
+
+Oct 23 18:13:36 sue kernel: ** IN_TCP DROP ** IN=eth0 OUT= SRC=10.10.10.10 LEN=48 TOS=0x04 PREC=0x00 TTL=117 ID=9354 DF PROTO=TCP SPT=3863 DPT=554 WINDOW=64240 RES=0x00 SYN URGP=0 
+
+
+
+Oct 23 18:13:36 sue kernel: ** IN_TCP DROP ** IN=eth0 OUT= SRC=10.10.10.10 LEN=48 TOS=0x04 PREC=0x00 TTL=117 ID=9354 DF PROTO=TCP SPT=3863 DPT=554 WINDOW=64240 RES=0x00 SYN URGP=0 
+
 

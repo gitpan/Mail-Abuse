@@ -1,6 +1,6 @@
 use ExtUtils::MakeMaker;
 
-# $Id: Makefile.PL,v 1.25 2004/02/16 17:19:50 lem Exp $
+# $Id: Makefile.PL,v 1.30 2004/03/10 20:19:05 lem Exp $
 
 my $checker = 0;
 
@@ -104,9 +104,12 @@ WriteMakefile
      'EXE_FILES'	=> [ 'bin/abuso', 
 			     'bin/acat', 
 			     'bin/scan', 
+			     'bin/popfetch',
 			     'bin/requester',
 			     'bin/maps-scan',
+			     'bin/spews-scan',
 			     'bin/maps-gather',
+			     'bin/google-gather',
 			     ],
      'INSTALLSCRIPT'	=> '/usr/local/bin',
      'PREREQ_PM'	=> 
@@ -131,6 +134,8 @@ WriteMakefile
 #	 'Config::Auto'		=> 0.03,
 	 'Params::Validate'	=> 0,
 	 'Tie::NetAddr::IP'	=> 1.51,
+	 'WWW::Mechanize'	=> 0,
+	 'WWW::Google::Groups'	=> 0,
      }, # e.g., Module::Name => 1.1
      ($] >= 5.005 ?    ## Add these new keywords supported since 5.005
       (ABSTRACT_FROM	=> 'lib/Mail/Abuse.pm',
@@ -153,12 +158,15 @@ install ::
 	@echo 
 	@echo Each script includes its own documentation in POD. Use
 	@echo 
-	@echo "  perldoc bin/abuso"
 	@echo "  perldoc bin/acat"
 	@echo "  perldoc bin/scan"
+	@echo "  perldoc bin/abuso"
+	@echo "  perldoc bin/popfetch"
 	@echo "  perldoc bin/requester"
 	@echo "  perldoc bin/maps-scan"
+	@echo "  perldoc bin/spews-scan"
 	@echo "  perldoc bin/maps-gather"
+	@echo "  perldoc bin/google-gather"
 	@echo 
 	@echo to see it. Please read the documentation of each module 
 	@echo thoroughly before reporting bugs or asking for help.

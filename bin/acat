@@ -39,7 +39,7 @@ find
 
 use Storable qw/retrieve/;
 
-our $VERSION = do { my @r = (q$Revision: 1.9 $ =~ /\d+/g); sprintf " %d."."%03d" x $#r, @r };
+our $VERSION = do { my @r = (q$Revision: 1.12 $ =~ /\d+/g); sprintf " %d."."%03d" x $#r, @r };
 
 =pod
 
@@ -49,13 +49,13 @@ acat - Dump an abuse report stored with Mail::Abuse::Processor::Store.pm
 
 =head1 SYNOPSIS
 
-    acat [-h] [-a] [-r] [-R delimiter] [-i] [-d] [-m method]
+    acat [-h] [-a] [-r] [-H header] [-R delimiter] [-i] [-d] [-m method] [-s seconds]
 
 =cut
 
     ;
-use vars qw/ $opt_a $opt_d $opt_h $opt_i $opt_r $opt_R $opt_m /;
-getopts('adhim:rR:');
+use vars qw/ $opt_a $opt_d $opt_H $opt_h $opt_i $opt_r $opt_R $opt_s $opt_m /;
+getopts('adH:him:rR:s:');
 
 =pod
 
@@ -84,6 +84,12 @@ pod2usage(verbose => 2) if $opt_h;
 
 =pod
 
+=item B<-s seconds>
+
+Consider for processing only those incidents that have a date within
+the last B<-s seconds>. Defaults to 0, which causes all the incidents
+are to be processed.
+
 =item B<-a>
 
 This option causes all the information fields to be dumped.
@@ -93,17 +99,45 @@ This option causes all the information fields to be dumped.
     ;
 $opt_i = $opt_r = 1 if $opt_a;
 
-$opt_r = 1 unless $opt_i || $opt_d || $opt_m || $opt_R;
+$opt_r = 1 unless $opt_H || $opt_i || $opt_d || $opt_m || $opt_R;
 $opt_r = undef if $opt_R;
+$opt_s = 0 if !defined $opt_s or $opt_s <= 0;
 
 for my $i (@ARGV)
 {
-    my $rep = retrieve($i);
+    my $rep;
+
+    eval { $rep = retrieve($i) };
+
+    if ($@)
+    {
+	warn "Failed to retrieve: $@\n";
+    }
 
     unless ($rep)
     {
 	warn "Failed to read report $i: $!\n";
 	next;
+    }
+
+=pod
+
+=item B<-H header>
+
+Dump the named headers from the original report. Multiple headers may
+be specified by separating them with a comma.
+
+=cut
+
+    if ($opt_H)
+    {
+	for my $h (split /,/, $opt_H)
+	{
+	    my $H = $rep->header();
+	    next unless $H;
+	    print "# $i $h\n";
+	    print "$h: ", $_, "\n" for grep { s/[\r\n]+/ /g } $H->get_all($h);
+	}
     }
 
 =pod
@@ -120,9 +154,12 @@ Dump all the incidents parsed from the original report.
 	my $count = 0;
 	for my $n (@{$rep->incidents})
 	{
-	    my $text = "$n";
-	    $text =~ s/\n/ /g;
-	    print "$i: [$count] ", scalar localtime($n->{time}), ", $text\n";
+	    if (!$opt_s or $n->time >= time - $opt_s)
+	    {
+		my $text = "$n";
+		$text =~ s/\n/ /g;
+		print "$i: [$count] ", scalar localtime($n->time), ", $text\n";
+	    }
 	    ++$count;
 	}
     }
@@ -150,8 +187,11 @@ syntax. Multiple keys can be dumped by separating them with ':'.
 
 	for my $n (@{$rep->incidents})
 	{
-	    $output = "$i [$count]:";
 	    ++$count;
+
+	    next unless (!$opt_s or $n->time >= time - $opt_s);
+
+	    $output = "$i [$count]:";
 
 	    for my $spec (split /\:/, $opt_m)
 	    {

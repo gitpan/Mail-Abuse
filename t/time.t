@@ -1,5 +1,5 @@
 
-# $Id: time.t,v 1.4 2004/02/06 23:04:40 lem Exp $
+# $Id: time.t,v 1.5 2004/03/10 20:20:13 lem Exp $
 
 use IO::File;
 use Test::More;
@@ -21,7 +21,7 @@ sub parse
     $incidents[2]->time(time - 120);
     $incidents[3]->time(time + 11 * 3600);
     $incidents[4]->time(time + 12 * 3600);
-#    print "# incident ", $_->time, "\n" for @incidents;
+    print "# incident ", $_->time, "\n" for @incidents;
     return @incidents;
 }
 package main;
@@ -46,7 +46,7 @@ sub write_config
     return undef unless $fh;
     return undef unless print $fh <<EOF;
 # This is a config file
-# debug time filter: on
+debug time filter: on
 filter before: $_[0]
 filter after: $_[1]
 EOF
@@ -76,7 +76,7 @@ SKIP:
 	 reader		=> new myReader,
 	 parsers	=> [ new myParser ],
 	 filters	=> [ new Mail::Abuse::Filter::Time ],
-#	 debug		=> 1,
+	 debug		=> 1,
 	 );
 
     isa_ok($rep, 'Mail::Abuse::Report');
@@ -92,7 +92,7 @@ SKIP:
 	 reader		=> new myReader,
 	 parsers	=> [ new myParser ],
 	 filters	=> [ new Mail::Abuse::Filter::Time ],
-#	 debug		=> 1,
+	 debug		=> 1,
 	 );
 
     isa_ok($rep, 'Mail::Abuse::Report');

@@ -12,7 +12,7 @@ use base 'Mail::Abuse::Incident';
 
 				# The code below should be in a single line
 
-our $VERSION = do { my @r = (q$Revision: 1.14 $ =~ /\d+/g); sprintf " %d."."%03d" x $#r, @r };
+our $VERSION = do { my @r = (q$Revision: 1.18 $ =~ /\d+/g); sprintf " %d."."%03d" x $#r, @r };
 
 =pod
 
@@ -176,55 +176,33 @@ sub parse
 				# Attempt to guess a type of log by
 				# searching for keywords
 
-    if ($$text =~ m/\W(virus|scan|ids|intrussion|worm|firewall)\W/i
-	or $$text =~ m/^(virus|scan|ids|intrussion|worm|firewall)\W/mi
-	or $$text =~ m/\W(virus|scan|ids|intrussion|worm|firewall)$/mi
-	or $$text =~ m/^(virus|scan|ids|intrussion|worm|firewall)$/mi)
+    my %rules = (
+		 '00copyright'	=> qr(copyright infringement
+				      |rights|media|kazaa|DMCA|BSA
+				      |Digital Millenium Copyright Act
+				      |copyrighted)ix,
+		 '01virus'	=> qr(virus|worm)ix,
+		 '02proxy'	=> qr(proxy|socks|squid),
+		 '03network'	=> qr(scan|ids|intrussion
+				      |firewall|portscan|connection),
+		 '04spam'	=> qr(spam|uce|unsolicited|mass),
+		 );
+
+    for my $r (sort keys %rules)
     {
-	$subtype = 'network';
-	warn "M::A::I::Log: subtype is $subtype due to keyword '$1'\n"
-	    if $debug;
+	my $re = $rules{$r};
+	if ($$text =~ m/\W($re)\W/ix
+	    or $$text =~ m/^($re)\W/mix
+	    or $$text =~ m/\W($re)$/mix
+	    or $$text =~ m/^($re)$/mix)
+	{
+	    ($subtype = $r) =~ s/^\d\d//;
+	    warn "M::A::I::Log: subtype is $subtype due to keyword '$1'\n"
+		if $debug;
+	}
     }
-    elsif ($$text =~ m/\W(copyright infringement
-			  |rights|media|kazaa|DMCA
-			  |Digital Millenium Copyright Act
-			  |copyrighted)\W/ix
-	   or $$text =~ m/^(copyright infringement
-			    |rights|media|kazaa|DMCA
-			    |Digital Millenium Copyright Act
-			    |copyrighted)\W/mix
-	   or $$text =~ m/\W(copyright infringement
-			     |rights|media|kazaa|DMCA
-			     |Digital Millenium Copyright Act
-			     |copyrighted)$/mix
-	   or $$text =~ m/^(copyright infringement
-			    |rights|media|kazaa|DMCA
-			    |Digital Millenium Copyright Act
-			    |copyrighted)$/mix)
-    {
-	$subtype = 'copyright';
-	warn "M::A::I::Log: subtype is $subtype due to keyword '$1'\n"
-	    if $debug;
-    }
-    elsif ($$text =~ m/\W(proxy|socks|squid)\W/i
-	   or $$text =~ m/^(proxy|socks|squid)\W/mi
-	   or $$text =~ m/\W(proxy|socks|squid)$/mi
-	   or $$text =~ m/^(proxy|socks|squid)$/mi)
-    {
-	$subtype = 'proxy';
-	warn "M::A::I::Log: subtype is $subtype due to keyword '$1'\n"
-	    if $debug;
-    }
-    elsif ($$text =~ m/\W(spam|uce|unsolicited|mass)\W/i
-	   or $$text =~ m/^(spam|uce|unsolicited|mass)\W/mi
-	   or $$text =~ m/\W(spam|uce|unsolicited|mass)$/mi
-	   or $$text =~ m/^(spam|uce|unsolicited|mass)$/mi)
-    {
-	$subtype = 'spam';
-	warn "M::A::I::Log: subtype is $subtype due to keyword '$1'\n"
-	    if $debug;
-    }
-    else
+
+    unless ($subtype)
     {
 	$subtype = '*';
 	warn "M::A::I::Log: subtype is $subtype due to no keyword\n"
@@ -303,7 +281,7 @@ sub parse
 		push @candidates, [ $1, $p ];
 	    }
 	    
- 	    while ($line =~ m/(\w+,\s+\d+\s+\d+\s+\d+:\d+:\d+\s+((AM|PM)?\s*[-+]?[A-Z0-9]+)?)/g)
+ 	    while ($line =~ m/(\w+,?\s+\d+\s+\d+\s+\d+:\d+(:\d+)?\s*((AM|PM)?\s*[-+]?[A-Z0-9]+)?)/g)
  	    {
  		my $p = str2time($1, $rep->tz) || next;
  		warn "M::A::I::Log: matched [7] date $1 (" . 
@@ -341,6 +319,27 @@ sub parse
 		warn "M::A::I::Log: matched [11] date $1 $2(" . 
 		    scalar localtime($p) . ")\n" if $debug;
 		push @candidates, [ "$1 $2", $p ];
+	    }
+
+	    # Mar 02 2004 15:21:35
+
+	    while ($line =~ m!(\w+ \d+ \d+ \d+:\d+:\d+)!g)
+	    {
+		my $p = str2time($1, $rep->tz) || next;
+		warn "M::A::I::Log: matched [12] date $1 (" . 
+		    scalar localtime($p) . ")\n" if $debug;
+		push @candidates, [ $1, $p ];
+	    }
+
+	    # 4Mar2004  3:30:50
+
+	    while ($line =~ m!((\d+)(\w{3})(\d+)\s+(\d+:\d+:\d+))!g)
+	    {
+		my $date = "$2 $3 $4 $5";
+		my $p = str2time($date, $rep->tz) || next;
+		warn "M::A::I::Log: matched [13] date $date (" . 
+		    scalar localtime($p) . ")\n" if $debug;
+		push @candidates, [ $date, $p ];
 	    }
 
 				# @candidates contain all proto-timestamps

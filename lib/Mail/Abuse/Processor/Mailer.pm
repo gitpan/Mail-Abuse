@@ -14,7 +14,7 @@ use constant ANTILOOP	=> 'X-Mail-Abuse-Loop';
 
 				# The code below should be in a single line
 
-our $VERSION = do { my @r = (q$Revision: 1.7 $ =~ /\d+/g); sprintf " %d."."%03d" x $#r, @r };
+our $VERSION = do { my @r = (q$Revision: 1.8 $ =~ /\d+/g); sprintf " %d."."%03d" x $#r, @r };
 
 =pod
 
@@ -130,6 +130,16 @@ use constant SUBJECT	=> 'mailer subject';
 
 =pod
 
+=item B<mailer precedence>
+
+The precedence to use. Defaults to 'bulk'.
+
+=cut
+
+use constant PRECEDENCE	=> 'mailer precedence';
+
+=pod
+
 =item B<mailer fail message>
 
 The name of the file containing the message template that will be used
@@ -189,6 +199,7 @@ sub process
     my $replyto	= $rep->config->{&REPLYTO};
     my $subject	= $rep->config->{&SUBJECT};
     my $errors	= $rep->config->{&ERRORSTO};
+    my $preced	= $rep->config->{&PRECEDENCE} || 'bulk';
     my $type	= $rep->config->{&TYPE} || 'mail';
 
     unless ($fail and $success and -f $fail and -f $success)
@@ -231,6 +242,7 @@ sub process
     $Headers{'Reply-To'}	= $replyto if $replyto;
     $Headers{'Errors-To'}	= $errors if $errors;
     $Headers{'Subject'}		= $subject if $subject;
+    $Headers{'Precedence'}	= $preced;
 
     if ($rep->normalized)
     {
