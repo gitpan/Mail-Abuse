@@ -12,7 +12,7 @@ use base 'Mail::Abuse::Incident';
 
 				# The code below should be in a single line
 
-our $VERSION = do { my @r = (q$Revision: 1.18 $ =~ /\d+/g); sprintf " %d."."%03d" x $#r, @r };
+our $VERSION = do { my @r = (q$Revision: 1.22 $ =~ /\d+/g); sprintf " %d."."%03d" x $#r, @r };
 
 =pod
 
@@ -173,41 +173,43 @@ sub parse
     }
 
     return unless $$text;
-				# Attempt to guess a type of log by
-				# searching for keywords
+
+    # Attempt to guess a type of log by
+    # searching for keywords performing
+    # score-based identification
 
     my %rules = (
-		 '00copyright'	=> qr(copyright infringement
-				      |rights|media|kazaa|DMCA|BSA
-				      |Digital Millenium Copyright Act
-				      |copyrighted)ix,
-		 '01virus'	=> qr(virus|worm)ix,
-		 '02proxy'	=> qr(proxy|socks|squid),
-		 '03network'	=> qr(scan|ids|intrussion
-				      |firewall|portscan|connection),
-		 '04spam'	=> qr(spam|uce|unsolicited|mass),
+		 'copyright'	=> qr(copyright\W+infringement
+				      |rights|media|kazaa|DMCA|BSA|MPAA
+				      |RIAA|copyrighted\W+material)ix,
+		 'virus'	=> qr(virus|worm)ix,
+		 'proxy'	=> qr(proxy|socks|squid)ix,
+		 'network'	=> qr(scan|ids|intrusion
+				      |firewall|portscan|connection
+				      |unauthorized)ix,
+		 'spam'		=> qr(spam|uce|ube|unsolicited|mass
+				      |e?smtp)ix,
 		 );
 
-    for my $r (sort keys %rules)
+    my %scores = map { $_ => 0 } keys %rules;
+    $scores{$subtype = '*'} = 0;
+
+    for my $r (keys %rules)
     {
 	my $re = $rules{$r};
-	if ($$text =~ m/\W($re)\W/ix
-	    or $$text =~ m/^($re)\W/mix
-	    or $$text =~ m/\W($re)$/mix
-	    or $$text =~ m/^($re)$/mix)
-	{
-	    ($subtype = $r) =~ s/^\d\d//;
-	    warn "M::A::I::Log: subtype is $subtype due to keyword '$1'\n"
-		if $debug;
-	}
+	$scores{$r} ++ while $$text =~ m/\W($re)\W/ixg;
+	$scores{$r} ++ while $$text =~ m/^($re)\W/ixg;
+	$scores{$r} ++ while $$text =~ m/\W($re)$/ixg;
+	$scores{$r} ++ while $$text =~ m/^($re)$/ixg;
     }
 
-    unless ($subtype)
+    foreach (keys %scores)
     {
-	$subtype = '*';
-	warn "M::A::I::Log: subtype is $subtype due to no keyword\n"
-	    if $debug;
+	$subtype = $_ if $scores{$_} > $scores{$subtype};
     }
+
+    warn "M::A::I::Log: subtype is $subtype due to scoring\n"
+	if $debug;
 
     my @time;			# List of timestamps
     my @addr;			# List of IP addresses
@@ -257,7 +259,7 @@ sub parse
 		push @candidates, [ $1, $p ];
 	    }
 
-	    while ($line =~ m!(\d+[/-]\w+[/-]\d+\s+\d+:\d+:\d+)!g)
+	    while ($line =~ m!(\d+[/-]\w+[/-]\d+[:\s]+\d+:\d+:\d+)!g)
 	    {
 		my $p = str2time($1, $rep->tz) || next;
 		warn "M::A::I::Log: matched [4] date $1 (" . 
@@ -273,7 +275,7 @@ sub parse
 		push @candidates, [ $1, $p ];
 	    }
 
-	    while ($line =~ m!((\w{3}\s)?\w{3}\s\d+\s\d+:\d+:\d+(\s\d+)?)!g)
+	    while ($line =~ m!((\w{3}\s)?\w{3}\s+\d+\s\d+:\d+:\d+(\s\d+)?)!g)
 	    {
 		my $p = str2time($1, $rep->tz) || next;
 		warn "M::A::I::Log: matched [6] date $1 (" . 

@@ -1,5 +1,5 @@
 
-# $Id: time.t,v 1.5 2004/03/10 20:20:13 lem Exp $
+# $Id: time.t,v 1.6 2004/05/29 17:52:27 lem Exp $
 
 use IO::File;
 use Test::More;
@@ -46,7 +46,7 @@ sub write_config
     return undef unless $fh;
     return undef unless print $fh <<EOF;
 # This is a config file
-debug time filter: on
+#debug time filter: on
 filter before: $_[0]
 filter after: $_[1]
 EOF
@@ -71,12 +71,14 @@ SKIP:
     skip "Failed to create dummy config $config: $!\n", $tests,
 	unless write_config("96 hours ago", "in 10 hours");
 
+    diag("You can install Mail::Abuse even if this test fails");
+
     my $rep = new Mail::Abuse::Report 
 	(config		=> $config,
 	 reader		=> new myReader,
 	 parsers	=> [ new myParser ],
 	 filters	=> [ new Mail::Abuse::Filter::Time ],
-	 debug		=> 1,
+#	 debug		=> 1,
 	 );
 
     isa_ok($rep, 'Mail::Abuse::Report');
@@ -92,7 +94,7 @@ SKIP:
 	 reader		=> new myReader,
 	 parsers	=> [ new myParser ],
 	 filters	=> [ new Mail::Abuse::Filter::Time ],
-	 debug		=> 1,
+#	 debug		=> 1,
 	 );
 
     isa_ok($rep, 'Mail::Abuse::Report');

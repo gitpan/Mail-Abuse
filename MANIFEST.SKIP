@@ -1,3 +1,4 @@
+\.cvsignore
 ^blib/
 ^Makefile$
 ^Makefile\.[a-z]+$

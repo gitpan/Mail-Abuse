@@ -14,7 +14,7 @@ use base 'Mail::Abuse::Processor';
 
 				# The code below should be in a single line
 
-our $VERSION = do { my @r = (q$Revision: 1.2 $ =~ /\d+/g); sprintf " %d."."%03d" x $#r, @r };
+our $VERSION = do { my @r = (q$Revision: 1.5 $ =~ /\d+/g); sprintf " %d."."%03d" x $#r, @r };
 
 our @Ignore = (qw/NAS-IP-Address/);
 
@@ -190,11 +190,14 @@ sub _livingston_parser
 		}
 	    }
 
-#	    warn "# addr $_\n" for map { $_->addr } @addrs;
+#	    warn "# addr $_\n" for @addrs;
+#	    warn "# iaddr $_\n" for map { $_->ip } @{$rep->incidents};
+#	    warn "# itime $_\n" for map { $_->time } @{$rep->incidents};
 
 	    for my $i (@addrs)
 	    {
-		push @match, grep { $i->contains($_->ip) } @{$rep->incidents};
+		push @match, grep { $_->time } 
+		grep { $i->contains($_->ip) } @{$rep->incidents};
 	    }
 
 	    unless (@match)
@@ -229,8 +232,8 @@ sub _livingston_parser
 
 	    for my $i (@match)
 	    {
-		if ($i->date >= $stamp
-		    and $i->date <= $stamp + $length)
+		if ($i->time >= $stamp
+		    and $i->time <= $stamp + $length)
 		{
 		    $i->radius({});
 		    while ($record =~ m/^\s*([-\w]+) = (.+)$/mg)

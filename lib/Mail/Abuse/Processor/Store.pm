@@ -21,7 +21,7 @@ use constant DEBUG	=> 'debug store';
 
 				# The code below should be in a single line
 
-our $VERSION = do { my @r = (q$Revision: 1.8 $ =~ /\d+/g); sprintf " %d."."%03d" x $#r, @r };
+our $VERSION = do { my @r = (q$Revision: 1.10 $ =~ /\d+/g); sprintf " %d."."%03d" x $#r, @r };
 
 =pod
 
@@ -80,6 +80,9 @@ The following functions are implemented.
 
 Takes a C<Mail::Abuse::Report> object as an argument and performs the
 processing action required.
+
+The processed C<$report> will have the filename where the report was
+stored, added in C<store_file>.
 
 =cut
 
@@ -170,6 +173,7 @@ sub process
     }
     else
     {
+	$rep->store_file($file);
 	eval 
 	{ 
 	    nstore($rep, $file) 

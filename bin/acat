@@ -39,7 +39,7 @@ find
 
 use Storable qw/retrieve/;
 
-our $VERSION = do { my @r = (q$Revision: 1.12 $ =~ /\d+/g); sprintf " %d."."%03d" x $#r, @r };
+our $VERSION = do { my @r = (q$Revision: 1.13 $ =~ /\d+/g); sprintf " %d."."%03d" x $#r, @r };
 
 =pod
 
@@ -49,13 +49,17 @@ acat - Dump an abuse report stored with Mail::Abuse::Processor::Store.pm
 
 =head1 SYNOPSIS
 
-    acat [-h] [-a] [-r] [-H header] [-R delimiter] [-i] [-d] [-m method] [-s seconds]
+    acat [-h] [-a] [-r] [-H header] [-R delimiter] [-i] [-d] [-m method] [-M method] [-s seconds]
 
 =cut
 
     ;
-use vars qw/ $opt_a $opt_d $opt_H $opt_h $opt_i $opt_r $opt_R $opt_s $opt_m /;
-getopts('adH:him:rR:s:');
+use vars qw/ 
+    $opt_a $opt_d $opt_H $opt_h $opt_i $opt_r $opt_R 
+    $opt_s $opt_m $opt_M
+    /;
+
+getopts('adH:him:M:rR:s:');
 
 =pod
 
@@ -99,7 +103,7 @@ This option causes all the information fields to be dumped.
     ;
 $opt_i = $opt_r = 1 if $opt_a;
 
-$opt_r = 1 unless $opt_H || $opt_i || $opt_d || $opt_m || $opt_R;
+$opt_r = 1 unless $opt_H || $opt_i || $opt_d || $opt_m || $opt_M || $opt_R;
 $opt_r = undef if $opt_R;
 $opt_s = 0 if !defined $opt_s or $opt_s <= 0;
 
@@ -168,11 +172,12 @@ Dump all the incidents parsed from the original report.
 
 =item B<-m method>
 
-Output a give value from the abuse report, given its accessor
-method. Indirections are possible by using a dot instead of the arrow
-operator. The key 'key' from the hashref stored under accessor 'baz'
-would be referred to as B<baz.key>. The 5th element from an arrayref
-stored under accessor 'bar' would be referenced as B<bar.4>.
+Output a give value from the incidents in an abuse report, given its
+accessor method. Indirections are possible by using a dot instead of
+the arrow operator. The key 'key' from the hashref stored under
+accessor 'baz' would be referred to as B<baz.key>. The 5th element
+from an arrayref stored under accessor 'bar' would be referenced as
+B<bar.4>.
 
 Deeper nesting is possible by simply following the given
 syntax. Multiple keys can be dumped by separating them with ':'.
@@ -243,6 +248,62 @@ syntax. Multiple keys can be dumped by separating them with ':'.
 	    }
 	    print $output, "\n";
 	}
+    }
+
+    if ($opt_M)
+    {
+	no strict 'refs';
+	my $output;
+
+	$output = "$i:";
+	my $r = $rep;
+
+	for my $spec (split /\:/, $opt_M)
+	{
+	    my @things	= split /\./, $spec;
+	    my $method	= shift @things;
+
+	    my $r = $r->$method;
+	    my @own = @things;
+	    while ($r and my $c = shift @own)
+	    {
+		if ($c =~ /^\d+$/)
+		{
+		    unless (ref $r eq 'ARRAY')
+		    {
+			warn "$i: Invalid type for $spec\n";
+			$r = undef;
+			last;
+		    }
+		    
+		    $r = $r->[$c];
+		}
+		elsif ($c)
+		{
+		    unless (ref $r eq 'HASH')
+		    {
+			warn "$i: Invalid type for $spec\n";
+			$r = undef;
+			last;
+		    }
+		    
+		    $r = $r->{$c};
+		}
+	    }
+
+	    unless (@own)
+	    {
+		if (defined $r)
+		{
+		    $output .= " $spec=$r";
+		}
+		else
+		{
+		    $output .= " $spec=undef";
+		}
+	    }
+	}
+	print $output, "\n";
     }
 
 =pod

@@ -1,5 +1,5 @@
 
-# $Id: radius.t,v 1.3 2003/11/11 16:29:21 lem Exp $
+# $Id: radius.t,v 1.4 2005/02/25 23:19:40 lem Exp $
 
 # Check the basic parsing and recognition of events from different types
 # of Radius detail / accounting files.
@@ -36,15 +36,15 @@ sub parse {
     push @incidents, new myIncident; # Miss
 
     $incidents[0]->ip		(new NetAddr::IP '172.16.64.25/32');
-    $incidents[0]->date		(str2time('Tue Jul 30 14:48:42 1996'));
+    $incidents[0]->time		(str2time('Tue Jul 30 14:48:42 1996'));
     $incidents[0]->type		('test/radius');
 
     $incidents[1]->ip		(new NetAddr::IP '192.168.32.35/32');
-    $incidents[1]->date		(str2time('Tue Jul 8 08:45:24 1997'));
+    $incidents[1]->time		(str2time('Tue Jul 8 08:45:24 1997'));
     $incidents[1]->type		('test/radius');
 
     $incidents[2]->ip		(new NetAddr::IP '172.16.64.25/32');
-    $incidents[2]->date		(str2time('Tue Jul 30 14:48:32 1996'));
+    $incidents[2]->time		(str2time('Tue Jul 30 14:48:32 1996'));
     $incidents[2]->type		('test/radius');
 
     return @incidents;
@@ -72,6 +72,7 @@ sub write_config ($)		# Produce a suitable config file for testing
     $fh->open($config, "w")
 	or diag "Failed to create test config file: $!";
     print $fh "radius detail location: $name\n";
+    print $fh "# debug radius: 1\n";
     $fh->close;
 }
 				# Create a hierarchy of files with our detail

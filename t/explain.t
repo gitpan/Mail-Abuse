@@ -1,9 +1,7 @@
 
-# $Id: log.t,v 1.12 2004/05/29 17:52:27 lem Exp $
+# $Id: explain.t,v 1.1 2005/03/21 20:06:41 lem Exp $
 
 use Test::More;
-
-$ENV{TZ} = 'GMT';		# Set a default timezone
 
 our @msgs = ();
 
@@ -35,6 +33,9 @@ plan tests => $tests;
 
 SKIP:
 {
+    skip 'To be written... Remove this skip and run interactively to test', 
+    $tests;
+
     eval { use Mail::Abuse::Incident::Normalize; $loaded = 1; };
     skip 'Mail::Abuse::Incident::Normalize failed to load (FATAL)', $tests
 	unless $loaded;
@@ -42,21 +43,32 @@ SKIP:
     $loaded = 0;
 
     eval { use Mail::Abuse::Incident::Log; $loaded = 1; };
-    skip 'Mail::Abuse::Incident::Log failed to load (FATAL)', $tests
+    skip 'Mail::Abuse::Incident::Normalize failed to load (FATAL)', $tests
 	unless $loaded;
 
-    skip 'The rest of this test seems b0rked. Sorry.', $tests;
+    $loaded = 0;
+
+    eval { use Mail::Abuse::Incident::SpamCop; $loaded = 1; };
+    skip 'Mail::Abuse::Incident::Normalize failed to load (FATAL)', $tests
+	unless $loaded;
+
+    $loaded = 0;
+
+    eval { use Mail::Abuse::Processor::Explain; $loaded = 1; };
+    skip 'Mail::Abuse::Processor::Explain failed to load (FATAL)', $tests
+	unless $loaded;
 
     my $rep = MyReport->new;
     $rep->reader(MyReader->new);
     $rep->filters([]);
-    $rep->processors([]);
+    $rep->processors([new Mail::Abuse::Processor::Explain]);
     $rep->config({});
-    $rep->config->{'debug log'} = 1;
 
-    for my $p ([new Mail::Abuse::Incident::Normalize, 
+    for my $p ([new Mail::Abuse::Incident::Normalize,
+		new Mail::Abuse::Incident::SpamCop,
 		new Mail::Abuse::Incident::Log],
-	       [new Mail::Abuse::Incident::Log])
+	       [new Mail::Abuse::Incident::SpamCop,
+		new Mail::Abuse::Incident::Log])
     {
 	$msg = 0;			# Retry all the messages
 	$rep->parsers($p);
@@ -64,15 +76,6 @@ SKIP:
 	for my $m (@msgs)
 	{
 	    isa_ok($rep->next, 'MyReport');
-	    is(@{$rep->incidents}, 1, 'Correct number of incidents reported');
-	    for (@{$rep->incidents})
-	    {
-		unless (is($_->time, 1066947216) 
-			and is($_->ip, NetAddr::IP->new('10.10.10.10')))
-		{
-		    diag $ {$rep->text};
-		}
-	    }
 	}
     }
 }

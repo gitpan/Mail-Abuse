@@ -12,7 +12,7 @@ use base 'Mail::Abuse::Incident';
 
 				# The code below should be in a single line
 
-our $VERSION = do { my @r = (q$Revision: 1.7 $ =~ /\d+/g); sprintf " %d."."%03d" x $#r, @r };
+our $VERSION = do { my @r = (q$Revision: 1.8 $ =~ /\d+/g); sprintf " %d."."%03d" x $#r, @r };
 
 =pod
 
@@ -294,7 +294,7 @@ sub decode_parts
     elsif (my $body = $e->bodyhandle)
     {
 	my $mime = $e->head->mime_type;
-	if ($mime eq 'text/plain')
+	if (grep { $mime eq $_ } qw(text/plain message/rfc822))
 	{
 	    my $b = $body->as_string;
 	    return \$b;

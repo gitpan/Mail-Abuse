@@ -1,6 +1,6 @@
 use ExtUtils::MakeMaker;
 
-# $Id: Makefile.PL,v 1.30 2004/03/10 20:19:05 lem Exp $
+# $Id: Makefile.PL,v 1.32 2005/03/21 23:43:30 lem Exp $
 
 my $checker = 0;
 
@@ -114,6 +114,7 @@ WriteMakefile
      'INSTALLSCRIPT'	=> '/usr/local/bin',
      'PREREQ_PM'	=> 
      {
+	 'DBI'			=> 1.48,
 	 'IO::File'		=> 0,
 	 'IO::Zlib'		=> 0,
 	 'Storable'		=> 0,
@@ -131,11 +132,12 @@ WriteMakefile
 	 'MIME::Parser'		=> 0,
 	 'HTML::Parser'		=> 0,
 	 'Mail::Mailer'		=> 0,
+	 'Text::CSV_XS'		=> 0,
 #	 'Config::Auto'		=> 0.03,
 	 'Params::Validate'	=> 0,
 	 'Tie::NetAddr::IP'	=> 1.51,
 	 'WWW::Mechanize'	=> 0,
-	 'WWW::Google::Groups'	=> 0,
+#	 'WWW::Google::Groups'	=> 0,
      }, # e.g., Module::Name => 1.1
      ($] >= 5.005 ?    ## Add these new keywords supported since 5.005
       (ABSTRACT_FROM	=> 'lib/Mail/Abuse.pm',

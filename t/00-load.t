@@ -1,5 +1,5 @@
 
-# $Id: 00-load.t,v 1.16 2004/02/23 18:47:20 lem Exp $
+# $Id: 00-load.t,v 1.20 2005/03/21 23:43:30 lem Exp $
 
 use Test::More;
 
@@ -17,14 +17,17 @@ my @modules = qw/
 	Mail::Abuse::Incident::Log
 	Mail::Abuse::Processor::Table
 	Mail::Abuse::Processor::Store
+	Mail::Abuse::Processor::Score
 	Mail::Abuse::Processor::Mailer
 	Mail::Abuse::Processor::Radius
 	Mail::Abuse::Incident::SpamCop
+	Mail::Abuse::Processor::Explain
 	Mail::Abuse::Incident::Received
 	Mail::Abuse::Incident::Normalize
-	Mail::Abuse::Reader::GoogleGroups
+	Mail::Abuse::Processor::ArchiveDBI
 	Mail::Abuse::Incident::MyNetWatchman
 	/;
+#	Mail::Abuse::Reader::GoogleGroups
 
 my @paths = ();
 
