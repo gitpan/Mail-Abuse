@@ -1,7 +1,9 @@
 
-# $Id: log.t,v 1.9 2004/02/15 19:00:15 lem Exp $
+# $Id: log.t,v 1.10 2004/02/17 11:48:47 lem Exp $
 
 use Test::More;
+
+$ENV{TZ} = 'GMT';		# Set a default timezone
 
 our @msgs = ();
 
@@ -50,27 +52,26 @@ SKIP:
     $rep->config({});
 #    $rep->config->{'debug log'} = 1;
 
-    $rep->parsers([new Mail::Abuse::Incident::Normalize, 
-		   new Mail::Abuse::Incident::Log]);
-    
-    for my $m (@msgs)
+    for my $p ([new Mail::Abuse::Incident::Normalize, 
+		new Mail::Abuse::Incident::Log],
+	       [new Mail::Abuse::Incident::Log])
     {
-	isa_ok($rep->next, 'MyReport');
-	is(@{$rep->incidents}, 1, 'Correct number of incidents reported');
-#	diag(Data::Dumper->Dump($rep->incidents));
-	is($_->ip, NetAddr::IP->new('10.10.10.10')) for @{$rep->incidents};
-	is($_->time, 1066947216) for @{$rep->incidents};
-    }
-
-    $msg = 0;			# Retry all the messages
-    $rep->parsers([new Mail::Abuse::Incident::Log]);
+	$msg = 0;			# Retry all the messages
+	$rep->parsers($p);
     
-    for my $m (@msgs)
-    {
-	isa_ok($rep->next, 'MyReport');
-	is(@{$rep->incidents}, 1, 'Correct number of incidents reported');
-	is($_->ip, NetAddr::IP->new('10.10.10.10')) for @{$rep->incidents};
-	is($_->time, 1066947216) for @{$rep->incidents};
+	for my $m (@msgs)
+	{
+	    isa_ok($rep->next, 'MyReport');
+	    is(@{$rep->incidents}, 1, 'Correct number of incidents reported');
+	    for (@{$rep->incidents})
+	    {
+		unless (is($_->time, 1066947216) 
+			and is($_->ip, NetAddr::IP->new('10.10.10.10')))
+		{
+		    diag $ {$rep->text};
+		}
+	    }
+	}
     }
 }
 
@@ -93,7 +94,7 @@ rbooth, 23 Oct 2003 18:13:36 -0400, 10.10.10.10, 17, 137, W32.Opaserv Worm?, 103
 
 
 
-23 Oct 2003 18:13:36 popoah: ipfw DENY from 10.10.10.10
+23 Oct 2003 18:13:36 -0400 popoah: ipfw DENY from 10.10.10.10
 *EOM
 Return-Path: <updatestatusonly@mynetwatchman.com>
 Message-Id: <200310310151.h9V5555555557770@lidiot.mynetwatchman.com>
@@ -116,7 +117,7 @@ rbooth,
 
 
 
-23 Oct 2003 18:13:36
+23 Oct 2003 18:13:36 -0400
 popoah: 
 ipfw DENY from 10.10.10.10
 *EOM
@@ -141,7 +142,7 @@ rbooth,
 
 
 
-Oct, 23 2003  6:13:36 PM
+Oct, 23 2003  6:13:36 PM -0400
 popoah: 
 ipfw DENY from 10.10.10.10
 *EOM
@@ -166,7 +167,7 @@ rbooth,
 
 
 
-Oct, 23 2003 6:13:36 PM
+Oct, 23 2003 6:13:36 PM -0400
 popoah: 
 ipfw DENY from 10.10.10.10
 *EOM

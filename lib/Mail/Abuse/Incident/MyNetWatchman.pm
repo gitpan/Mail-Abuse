@@ -12,7 +12,7 @@ use base 'Mail::Abuse::Incident';
 
 				# The code below should be in a single line
 
-our $VERSION = do { my @r = (q$Revision: 1.2 $ =~ /\d+/g); sprintf " %d."."%03d" x $#r, @r };
+our $VERSION = do { my @r = (q$Revision: 1.3 $ =~ /\d+/g); sprintf " %d."."%03d" x $#r, @r };
 
 =pod
 
@@ -88,11 +88,11 @@ sub parse
     return unless $source;
 
     while ($$text =~ 
-	   m!^([^,]+, ([^,]+), [^,]+, [^,]+, [^,]+, ([^,]+), [^,]+, [^,]+)$!gms)
+	   m!^(([^\n,]+, )?([^\n,]+), [^\n,]+, [^\n,]+, [^\n,]+, ([^\n,]+), [^\n,]+, [^\n,]+)$!gm)
     {
 	my $data = $1;
-	my $type = $3;
-	my $date = str2time($2, $rep->tz);
+	my $type = $4;
+	my $date = str2time($3, $rep->tz);
 
 	next unless defined $date;
 

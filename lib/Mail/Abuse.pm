@@ -9,7 +9,7 @@ require Exporter;
 
 				# The code below should be in a single line
 
-our $VERSION = do { my @r = (q$Revision: 1.18 $ =~ /\d+/g); sprintf " %d."."%03d" x $#r, @r };
+our $VERSION = do { my @r = (q$Revision: 1.19 $ =~ /\d+/g); sprintf " %d."."%03d" x $#r, @r };
 
 "I'm just a placeholder module";
 
@@ -85,6 +85,9 @@ None by default.
 =head1 HISTORY
 
 $Log: Abuse.pm,v $
+Revision 1.19  2004/02/17 21:50:06  lem
+Updated Mail::Abuse::Incident::MyNetWatchman
+
 Revision 1.18  2004/02/16 17:20:29  lem
 Freeze for next release
 
