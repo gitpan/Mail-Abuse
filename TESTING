@@ -1,0 +1,20 @@
+It is a good idea to edit this file as -*- indented-text -*-
+
+In order to test the POP3 reader (Mail::Abuse::Reader::POP3), you must
+create a config file in your working directory named
+"poptest.cfg". This file must contain the following directives
+
+     pop3 server
+     pop3 username
+     pop3 password
+     pop3 delete
+
+with suitable values for your installation. See the file
+etc/sample.conf for information on the format of these entries.
+
+It is also very good if the mailbox contains at least two messages so
+that fetching can be tested properly (if you're really paranoid).
+
+For the rest of the modules, autonomous tests are included. These
+tests automatically provide any configuration options they might need,
+so the whole process is automatic.

@@ -1,0 +1,157 @@
+#!/usr/bin/perl
+
+use strict;
+use warnings;
+
+use Pod::Usage;
+use Getopt::Std;
+use NetAddr::IP;
+use Data::Dumper;
+use Mail::Abuse::Report;
+use Storable qw/retrieve/;
+
+our $VERSION = do { my @r = (q$Revision: 1.3 $ =~ /\d+/g); sprintf " %d."."%03d" x $#r, @r };
+
+=pod
+
+=head1 NAME
+
+acat - Dump an abuse report stored with Mail::Abuse::Processor::Store.pm
+
+=head1 SYNOPSIS
+
+    acat [-h] [-a] [-r] [-i] [-d]
+
+=cut
+
+    ;
+use vars qw/ $opt_a $opt_d $opt_h $opt_i $opt_r /;
+getopts('adhir');
+
+=pod
+
+=head1 DESCRIPTION
+
+C<acat> ("abuse cat") dumps to its standard output the data stored in
+a Mail::Abuse::Report object that was stored with
+C<Mail::Abuse::Processor::Store>.
+
+This is useful to build external scripts or to simply peruse the
+database of reports that is created by the C<Mail::Abuse> system.
+
+The format of the dump is controlled by the command line flags, as
+follows:
+
+=over
+
+=item B<-h>
+
+Causes this documentation to be produced.
+
+=cut
+    ;
+
+pod2usage(verbose => 2) if $opt_h;
+
+=pod
+
+=item B<-a>
+
+This option causes all the information fields to be dumped.
+
+=cut
+
+    ;
+$opt_i = $opt_r = 1 if $opt_a;
+
+$opt_r = 1 unless $opt_i || $opt_d;
+
+for my $i (@ARGV)
+{
+    my $rep = retrieve($i);
+
+    unless ($rep)
+    {
+	warn "Failed to read report $i: $!\n";
+	next;
+    }
+
+=pod
+
+=item B<-i>
+
+Dump all the incidents parsed from the original report.
+
+=cut
+    ;
+
+    if ($opt_i)
+    {
+	for my $n (@{$rep->incidents})
+	{
+	    print "$i: $n->{ip}, ", scalar localtime($n->{time}), ", ", 
+	    $n->{type}, "\n";
+	}
+    }
+
+=pod
+
+=item B<-r>
+
+Dump the original abuse report, as was received. This is the default.
+
+=cut
+    ;
+
+    if ($opt_r)
+    {
+	print $ {$rep->text}, "\n";
+    }
+
+=pod
+
+=item B<-d>
+
+Dump the complete object using C<Data::Dumper>.
+
+=cut
+
+    ;
+    print Data::Dumper->Dump([$rep]) if $opt_d;
+}
+
+__END__
+
+=pod
+
+=back
+
+=head1 HISTORY
+
+=over
+
+=item Jun, 2003
+
+Begin working in the first version of the code, as a replacement of a
+more rudimentary proof of concept.
+
+=back
+
+=head1 LICENSE AND WARRANTY
+
+This code and all accompanying software comes with NO WARRANTY. You
+use it at your own risk.
+
+This code and all accompanying software can be used freely under the
+same terms as Perl itself.
+
+=head1 AUTHOR
+
+Luis E. Muñoz <luismunoz@cpan.org>
+
+=head1 SEE ALSO
+
+perl(1), C<Mail::Abuse>.
+
+=cut
+

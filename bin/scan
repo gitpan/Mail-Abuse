@@ -1,0 +1,294 @@
+#!/usr/bin/perl
+
+use strict;
+use warnings;
+
+# $Id: scan,v 1.5 2003/11/03 16:35:51 lem Exp $
+
+use Mail::RBL;
+use Pod::Usage;
+use Getopt::Std;
+use NetAddr::IP;
+
+our $VERSION = do { my @r = (q$Revision: 1.5 $ =~ /\d+/g); sprintf " %d."."%03d" x $#r, @r };
+
+=pod
+
+=head1 NAME
+
+scan - Looks into a number of public DNS blacklists wether a host is listed
+
+=head1 SYNOPSIS
+
+    scan [-h] [-d delay] [-v] [-m regexp] [-M regexp]
+
+=head1 DESCRIPTION
+
+This script automates the task of verifying that your address space is
+in a given list. You can supply a single host, a subnet or a list of
+hosts or subnets in the command line. Every host is listed against a
+built-in list of more than 100 public RBLs.
+
+=head2 Do not abuse this script
+
+RBLs are operated on a wide variety of hardware and network
+conditions. Some RBLs can take millions of queries a day. Other RBLs
+do not have the resources for such a large usage.
+
+This script allows you to scan a very large range with a simple
+command. The code introduces a delay (which you could bypass, but be
+sure to understand the implications) in order to avoid crowding the
+resources of said RBLs. Note that some RBLs will consider a large
+scan, as an abuse incident B<and probably list your site> as a
+response.
+
+The intend of this code is to help you establish a status about the
+listings within your network. I assume it is ok to run this script
+periodically, provided that you do not abuse doing things as running
+multiple instances in parallel.
+
+The following options are recognized:
+
+=over
+
+=item B<-h>
+
+Outputs this documentation.
+
+=item B<-d delay>
+
+Delay in seconds between a set of queries to the RBLs.
+
+=item B<-m regexp>
+
+Only query RBLs whose tags match the given regular expression.
+
+=item B<-M regexp>
+
+Similar to B<-m>, but the regexp B<must not match> to use the given RBL.
+
+This is very useful as there are some RBLs that match a significant
+proportion of the address space or that are not helpful in your
+particular scenario.
+
+Another potential use of B<-M> and B<-m>, is to taylor the list of
+RBLs to search in order to speed up the lookups. This is specially
+true if you are interested in a scan of a large piece of address
+space.
+
+=item B<-v>
+
+Be verbose about progress.
+
+=cut
+
+    ;
+use vars qw/ $opt_d $opt_h $opt_M $opt_m $opt_v /;
+
+getopts('d:hM:m:v');
+
+$opt_d = 1 unless defined $opt_d;
+pod2usage(verbose => 2) if $opt_h;
+
+$opt_m = qr/$opt_m/ if $opt_m;
+$opt_M = qr/$opt_M/ if $opt_M;
+
+my %rbl = (
+	   'maps-rbl'	=> Mail::RBL->new('blackholes.mail-abuse.org'),
+	   'maps-dul'	=> Mail::RBL->new('dialups.mail-abuse.org'),
+	   'maps-rss'	=> Mail::RBL->new('relays.mail-abuse.org'),
+	   'sbl'	=> Mail::RBL->new('sbl.spamhaus.org'),
+	   'spews'	=> Mail::RBL->new('spews.bl.reynolds.net.au'),
+	   'spews-l1'	=> Mail::RBL->new('l1.spews.dsnbl.sorbs.net'),
+	   'spews-l2'	=> Mail::RBL->new('l2.spews.dnsbl.sorbs.net'),
+	   'spamsites'	=> Mail::RBL->new('spamsites.bl.reynolds.net.au'),
+	   'spambag'	=> Mail::RBL->new('blacklist.spambag.org'),
+	   'five-ten'	=> Mail::RBL->new('blackholes.five-ten-sg.com'),
+	   'intersil'	=> Mail::RBL->new('blackholes.intersil.net'),
+	   'blars'	=> Mail::RBL->new('block.blars.org'),
+	   'spamcop'	=> Mail::RBL->new('bl.spamcop.net'),
+	   'easynet-or'	=> Mail::RBL->new('blackholes.easynet.net'),
+	   'jippg'	=> Mail::RBL->new('mail-abuse.blacklist.jippg.org'),
+	   'leadmon'	=> Mail::RBL->new('spamguard.leadmon.net'),
+	   'kithrup'	=> Mail::RBL->new('3y.spam.mrs.kithrup.com'),
+	   'njabl'	=> Mail::RBL->new('dnsbl.njabl.org'),
+	   'xbl'	=> Mail::RBL->new('xbl.selwerd.cx'),
+	   'wytnij'	=> Mail::RBL->new('spam.wytnij.to'),
+	   'rope'	=> Mail::RBL->new('rbl.rope.net'),
+	   'ntvinet'	=> Mail::RBL->new('rbl.ntvinet.net'),
+	   'dsbl'	=> Mail::RBL->new('list.dsbl.org'),
+	   'dsbl-unc'	=> Mail::RBL->new('unconfirmed.dsbl.org'),
+	   'dsbl-multi'	=> Mail::RBL->new('multihop.dsbl.org'),
+	   'rfci-ipw'	=> Mail::RBL->new('ipwhois.rfc-ignorant.org'),
+	   'dnsbl'	=> Mail::RBL->new('in.dnsbl.org'),
+	   'dnsrbl'	=> Mail::RBL->new('spam.dnsrbl.net'),
+	   'drnrbl-dun'	=> Mail::RBL->new('dun.dnsrbl.net'),
+	   'uceb'	=> Mail::RBL->new('blackholes.uceb.org'),
+	   'ssbl'	=> Mail::RBL->new('bl.deadbeef.com'),
+	   'rsbl'	=> Mail::RBL->new('rsbl.aupads.org'),
+	   'habeas-hil'	=> Mail::RBL->new('hil.habeas.com'),
+	   'deadbeef'	=> Mail::RBL->new('bl.deadbeef.com'),
+	   'uu.se'	=> Mail::RBL->new('intruders.docs.uu.se'),
+	   'people.it'	=> Mail::RBL->new('mail.people.it'),
+	   'squawk'	=> Mail::RBL->new('blocklist.squawk.com'),
+	   'squawk-2'	=> Mail::RBL->new('blocklist2.squawk.com'),
+	   'fnidder'	=> Mail::RBL->new('rbl.fnidder.dk'),
+	   'hilli'	=> Mail::RBL->new('blocked.hilli.dk'),
+	   'sci.kun.nl'	=> Mail::RBL->new('blacklist.sci.kun.nl'),
+	   'schulte'	=> Mail::RBL->new('rbl.schulte.org'),
+	   'icm.edu.pl'	=> Mail::RBL->new('forbidden.icm.edu.pl'),
+	   'gweep'	=> Mail::RBL->new('msgid.bl.gweep.ca'),
+	   'sorbs'	=> Mail::RBL->new('dnsbl.sorbs.net'),
+	   'sorbs-spam'	=> Mail::RBL->new('spam.dnsbl.sorbs.net'),
+	   'sorbs-web'	=> Mail::RBL->new('web.dnsbl.sorbs.net'),
+	   'sorbs-rly'	=> Mail::RBL->new('relays.dnsbl.sorbs.net'),
+	   'sorbs-http'	=> Mail::RBL->new('http.dnsbl.sorbs.net'),
+	   'schpider'	=> Mail::RBL->new('vox.schpider.com'),
+	   'trustic'	=> Mail::RBL->new('query.trustic.com'),
+	   'isoc'	=> Mail::RBL->new('dnsbl.isoc.bl'),
+	   'woody'	=> Mail::RBL->new('blacklist.woody.ch'),
+	   'spamblock'	=> Mail::RBL->new('all.spamblock.unit.liu.se'),
+	   'firstbase'	=> Mail::RBL->new('rbl.firstbase.com'),
+	   'tolkien'	=> Mail::RBL->new('bl.tolkien.dk'),
+	   'kropka-ip'	=> Mail::RBL->new('ip.rbl.kropka.net'),
+	   'kropka-all'	=> Mail::RBL->new('all.rbl.kropka.net'),
+	   'or.id'	=> Mail::RBL->new('dnsbl.antispam.or.id'),
+	   'cbl'	=> Mail::RBL->new('cbl.abuseat.org'),
+	   'solid'	=> Mail::RBL->new('dnsbl.solid.net'),
+	   'solid-pool'	=> Mail::RBL->new('pool.dnsbl.solid.net'),
+	   'wsff'	=> Mail::RBL->new('will-spam-for-food.eu.org'),
+	   'jamm'	=> Mail::RBL->new('dnsbl.jammconsulting.com'),
+	   'yamta'	=> Mail::RBL->new('spamsources.yamta.org'),
+	   'maps-rbl+'	=> Mail::RBL->new('rbl-plus.mail-abuse.org'),
+	   'alphanet'	=> Mail::RBL->new('blackholes.alphanet.ch'),
+	   'ppbl'	=> Mail::RBL->new('ppbl.beat.st'),
+	   'mcfadden'	=> Mail::RBL->new('bl.csma.biz'),
+	   'redhawk'	=> Mail::RBL->new('access.redhawk.org'),
+	   'ahbl'	=> Mail::RBL->new('dnsbl.ahbl.org'),
+	   'ordb'	=> Mail::RBL->new('relays.ordb.org'),
+	   'orvedb'	=> Mail::RBL->new('orvedb.aupads.org'),
+	   'nether-or'	=> Mail::RBL->new('relays.nether.net'),
+	   'nether-oru'	=> Mail::RBL->new('unsure.nether.net'),
+	   'kropka-or'	=> Mail::RBL->new('or.rbl.kropka.net'),
+	   'visi-relay'	=> Mail::RBL->new('relays.visi.com'),
+	   'blitzed-op'	=> Mail::RBL->new('opm.blitzed.org'),
+	   'pss'	=> Mail::RBL->new('pss.spambusters.com.ar'),
+	   'jippg-dul'	=> Mail::RBL->new('dialup.blacklist.jippg.org'),
+	   'pdl'	=> Mail::RBL->new('dialups.visi.com'),
+	   'dul.ru'	=> Mail::RBL->new('dul.ru'),
+	   'aupads'	=> Mail::RBL->new('duinv.aupads.org'),
+	   'ybl'	=> Mail::RBL->new('ybl.megacity.org'),
+	   'vbl'	=> Mail::RBL->new('vnl.mookystick.com'),
+	   'korea'	=> Mail::RBL->new('korea.services.net'),
+	   'flowgo-away'	=> Mail::RBL->new('flowgoaway.com'),
+	   'blackholes-us'	=> Mail::RBL->new('blackholes.us'),
+	   'kropka-form'	=> Mail::RBL->new('form.rbl.kropka.net'),
+	   'kropka-proxy'	=> Mail::RBL->new('op.rbl.kropka.net'),
+	   'kropka-dialup'	=> Mail::RBL->new('dialup.rbl.kropka.net'),
+	   'relaywatcher'	=> Mail::RBL->new('relaywatcher.n13mbl.com'),
+	   'gweep-relays'	=> Mail::RBL->new('relays.bl.gweep.ca'),
+	   'gweep-proxy'	=> Mail::RBL->new('proxy.bl.gweep.ca'),
+	   'cymru-bogons'	=> Mail::RBL->new('bogons.cymru.com'),
+	   'arix-dict-f'	=> Mail::RBL->new('fresh.dict.rbl.arix.com'),
+	   'arix-dict-s'	=> Mail::RBL->new('stale.dict.rbl.arix.com'),
+	   'postfixgate'	=> Mail::RBL->new('bl.redhatgate.com'),
+	   'surriel-psbl'	=> Mail::RBL->new('psbl.surriel.com'),
+	   'spamsources'	=> Mail::RBL->new('spamsources.dnsbl.info'),
+	   'chickenboner'	=> Mail::RBL->new('fl.chickenboner.biz'),
+	   'borderworlds'	=> Mail::RBL->new('bl.borderworlds.dk'),
+	   'technovision'	=> Mail::RBL->new('bl.technovision.dk'),
+	   'no-more-funn'	=> Mail::RBL->new('no-more-funn.moensted.dk'),
+	   'reynolds-t1'	=> Mail::RBL->new('t1.bl.reynolds.net.au'),
+	   'reynolds-ricn'	=> Mail::RBL->new('ricn.bl.reynolds.net.au'),
+	   'reynolds-rmst'	=> Mail::RBL->new('rmst.bl.reynolds.net.au'),
+	   'reynolds-ksi'	=> Mail::RBL->new('ksi.bl.reynolds.net.au'),
+	   'reynolds-omrs'	=> Mail::RBL->new('omrs.bl.reynolds.net.au'),
+	   'reynolds-osrs'	=> Mail::RBL->new('osrs.bl.reynolds.net.au'),
+	   'reynolds-wingate'	=> Mail::RBL->new('owps.bl.reynolds.net.au'),
+	   'reynolds-osps'	=> Mail::RBL->new('osps.bl.reynolds.net.au'),
+	   'reynolds-rdts'	=> Mail::RBL->new('rdts.bl.reynolds.net.au'),
+	   'sorbs-proxy'	=> Mail::RBL->new('misc.dnsbl.sorbs.net'),
+	   'sorbs-socks'	=> Mail::RBL->new('socks.dnsbl.sorbs.net'),
+	   'easynet-dynablock'	=> Mail::RBL->new('dynablock.easynet.nl'),
+	   'always-blocked'	=> Mail::RBL->new('ipv.fahq2.com'),
+	   'cluecentral-satos'	=> Mail::RBL->new('satos.rbl.cluecentral.net'),
+	   'kundenserver'	=> Mail::RBL->new('relays.bl.kundenserver.de'),
+	   'arix-slip-f'	=> Mail::RBL->new('fresh.sa_slip.rbl.arix.com'),
+	   'arix-slip-s'	=> Mail::RBL->new('stale.sa_slip.rbl.arix.com'),
+	   'easynet-proxy'	=> Mail::RBL->new('proxies.blackholes.easynet.nl'),
+	   'jippg-dulnj'	=> Mail::RBL->new('jp.dialup.blacklist.jippg.org'),
+	   'jippg-duljp'	=> Mail::RBL->new('non-jp.dialup.blacklist.jippg.org'),
+	   'carrot-and-stick'	=> Mail::RBL->new('reject.the-carrot-and-the-stick.com'),
+	   'completewhois-bogons'	=> Mail::RBL->new('bogons.dnsiplists.completewhois.com'),
+	   'completewhois-hijacked'	=> Mail::RBL->new('hijacked.dnsiplists.completewhois.com'),
+	   );
+
+print "Scanning arguments against ", scalar keys %rbl, " RBLs\n"
+    if $opt_v;
+
+for my $ip (map { NetAddr::IP->new($_)->hostenum } @ARGV)
+{
+    local $| = 1;
+    for my $rbl (sort keys %rbl)
+    {
+	next unless !$opt_m or $rbl =~ m/${opt_m}/;
+	next unless !$opt_M or $rbl !~ m/${opt_M}/;
+
+	if (my $res = $rbl{$rbl}->check($ip->addr))
+	{
+	    print $ip->addr, " is listed in $rbl (", $res->addr, ")\n"; 
+	}
+	elsif ($opt_v)
+	{
+	    print $ip->addr, " is NOT listed in $rbl\n"; 
+	}
+    }
+    sleep $opt_d if $opt_d;
+}
+
+__END__
+
+=pod
+
+=back
+
+=head1 EXAMPLES
+
+A typical scenario where this script is useful, is when a subnet needs
+to be checked against a set of RBLs. This command is most likely what
+you need:
+
+    scan -M 'blars|jamm|jippg|squawk|uu.se|xbl' 10.10.10.0/24
+
+The usage of -M in the example, excludes the named lists as they seem
+to be too agressive for our purposes, at least in our country's
+networks.
+
+=head1 HISTORY
+
+=over
+
+=item B<Oct, 2003>
+
+First version of this code.
+
+=back
+
+=head1 LICENSE AND WARRANTY
+
+This code and all accompanying software comes with NO WARRANTY. You
+use it at your own risk.
+
+This code and all accompanying software can be used freely under the
+same terms as Perl itself.
+
+=head1 AUTHOR
+
+Luis E. Muñoz <luismunoz@cpan.org>
+
+=head1 SEE ALSO
+
+perl(1), C<Mail::RBL(3)>.
+
+=cut
+
