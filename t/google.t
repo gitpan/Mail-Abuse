@@ -1,13 +1,12 @@
 
-# $Id: google.t,v 1.3 2005/03/21 23:43:30 lem Exp $
+# $Id: google.t,v 1.4 2005/06/09 15:04:31 lem Exp $
 
 use IO::File;
 use Test::More;
-use Mail::Abuse::Reader::GoogleGroups;
 
 my $loaded = 0;
 my $config = "test$$.cfg";
-my $tests = 14;
+my $tests = 15;
 
 package MyReport;
 use base 'Mail::Abuse::Report';
@@ -18,20 +17,23 @@ END { unlink $config; };
 
 plan tests => $tests;
 
-unless (exists $ENV{GOOGLE_PROXY})
-{
-    diag "See file TESTING if your network requires the use of proxies.";
-    diag "If this is the case, some tests may fail until " 
-	. "you follow directions.";
-#    diag "Tests will be attempted anyway.";
-}
-
 SKIP: 
 {
     skip "These tests have been disabled as Google changed its interface\n", 
     $tests--;
 
-   my $fh = new IO::File;
+    unless (exists $ENV{GOOGLE_PROXY})
+    {
+	diag "";
+	diag "See file TESTING if your network requires the use of proxies.";
+	diag "If this is the case, some tests may fail until " 
+	    . "you follow directions.";
+	diag "Tests will be attempted anyway.";
+    }
+
+    use_ok('Mail::Abuse::Reader::GoogleGroups');
+
+    my $fh = new IO::File;
     skip "Failed to create temp config $config: $! (FATAL)\n", $tests--
 	unless ($fh->open($config, "w"));
 

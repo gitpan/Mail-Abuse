@@ -1,6 +1,6 @@
 use ExtUtils::MakeMaker;
 
-# $Id: Makefile.PL,v 1.32 2005/03/21 23:43:30 lem Exp $
+# $Id: Makefile.PL,v 1.34 2005/11/05 23:19:32 lem Exp $
 
 my $checker = 0;
 
@@ -18,6 +18,21 @@ be the recomendation that comes with Params::Validate. See its README
 file for more information.
 
 EOT
+    ;
+}
+
+eval { require Template::Plugin; };
+if ($@)
+{
+    print <<EOF;
+
+This distribution includes plugins for the Template::Toolkit that
+require Template::Plugin, which is not available on this system. The
+plugins cannot be tested without prerequisites, but will be installed
+anyway. If you later want to use them, simply install
+Template::Toolkit.
+
+EOF
     ;
 }
 
@@ -115,9 +130,15 @@ WriteMakefile
      'PREREQ_PM'	=> 
      {
 	 'DBI'			=> 1.48,
+
+	 # DBI 1.48 is needed for some of the tests. However, the actual
+	 # modules can run under older DBIs. 1.46 is known to work
+	 # flawlessly.
+
 	 'IO::File'		=> 0,
-	 'IO::Zlib'		=> 0,
+	 'PerlIO::gzip'		=> 0,
 	 'Storable'		=> 0,
+	 'DBD::CSV'		=> 0,
 	 'Net::POP3'		=> 2.23, # ->getfh() is required
 	 'Test::More'		=> 0,
 	 'File::Path'		=> 0,
@@ -141,7 +162,7 @@ WriteMakefile
      }, # e.g., Module::Name => 1.1
      ($] >= 5.005 ?    ## Add these new keywords supported since 5.005
       (ABSTRACT_FROM	=> 'lib/Mail/Abuse.pm',
-       AUTHOR     	=> 'Luis E. Muñoz <luismunoz@cpan.org>') : ()),
+       AUTHOR     	=> 'Luis E. MuÃ±oz <luismunoz@cpan.org>') : ()),
      );
 
 package MY;

@@ -3,10 +3,13 @@
 use strict;
 use warnings;
 
+use IO::File;
 use Pod::Usage;
 use File::Find;
+use File::Spec;
 use Getopt::Std;
 use NetAddr::IP;
+use PerlIO::gzip;
 use Data::Dumper;
 
 				# All modules under Mail::Abuse will be
@@ -34,12 +37,12 @@ find
 	     eval "use $ext";
 	     push @used, $ext unless $@;
 	 },
-     }, @INC
+     }, map { File::Spec->catdir($_, 'Mail', 'Abuse') } @INC
      );
 
-use Storable qw/retrieve/;
+use Storable qw/fd_retrieve/;
 
-our $VERSION = do { my @r = (q$Revision: 1.13 $ =~ /\d+/g); sprintf " %d."."%03d" x $#r, @r };
+our $VERSION = do { my @r = (q$Revision: 1.15 $ =~ /\d+/g); sprintf " %d."."%03d" x $#r, @r };
 
 =pod
 
@@ -67,7 +70,7 @@ getopts('adH:him:M:rR:s:');
 
 C<acat> ("abuse cat") dumps to its standard output the data stored in
 a Mail::Abuse::Report object that was stored with
-C<Mail::Abuse::Processor::Store>.
+C<Mail::Abuse::Processor::Store> in the serialized modes.
 
 This is useful to build external scripts or to simply peruse the
 database of reports that is created by the C<Mail::Abuse> system.
@@ -110,13 +113,22 @@ $opt_s = 0 if !defined $opt_s or $opt_s <= 0;
 for my $i (@ARGV)
 {
     my $rep;
+    my $fh = new IO::File $i, "<:gzip(autopop)";
 
-    eval { $rep = retrieve($i) };
+    unless ($fh)
+    {
+	warn "Failed to open report file: $!\n";
+	next;
+    }
+
+    eval { $rep = fd_retrieve($fh) };
 
     if ($@)
     {
 	warn "Failed to retrieve: $@\n";
     }
+
+    $fh->close;
 
     unless ($rep)
     {
@@ -369,7 +381,7 @@ same terms as Perl itself.
 
 =head1 AUTHOR
 
-Luis E. Muñoz <luismunoz@cpan.org>
+Luis E. MuÃ±oz <luismunoz@cpan.org>
 
 =head1 SEE ALSO
 

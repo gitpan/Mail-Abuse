@@ -10,7 +10,7 @@ use base 'Mail::Abuse::Processor';
 
 				# The code below should be in a single line
 
-our $VERSION = do { my @r = (q$Revision: 1.1 $ =~ /\d+/g); sprintf " %d."."%03d" x $#r, @r };
+our $VERSION = do { my @r = (q$Revision: 1.6 $ =~ /\d+/g); sprintf " %d."."%03d" x $#r, @r };
 
 use constant REPORT_DSN		=> 'archive dsn';
 use constant REPORT_USER	=> 'archive user';
@@ -84,7 +84,7 @@ The password required for connection to the DBI datasource.
 
 Define which data elements from a C<Mail::Abuse::Report> object will
 be stored as the columns of each row in the database. The elements are
-specified as E<lt>column<E<gt>:E<lt>methodE<gt>, where B<column> is
+specified as E<lt>columnE<gt>:E<lt>methodE<gt>, where B<column> is
 the database column name used to denote said element and B<method> is
 the accessor in the C<Mail::Abuse::Report> object.
 
@@ -111,6 +111,11 @@ object.
 =item C<$time>
 
 The current value of the C<time()> function.
+
+=item C<$ENV{...}>
+
+The current value of the corresponding environment variable, which may
+also be undef.
 
 =back
 
@@ -155,10 +160,7 @@ processing action required.
 
 =cut
 
-sub DESTROY
-{
-    $dbh and $dbh->disconnect();
-}
+sub DESTROY { $dbh and $dbh->disconnect(); }
 
 sub _decode_columns ($$)
 {
@@ -178,7 +180,7 @@ sub _decode_columns ($$)
     return \%cols;
 }
 
-# Obtain a value from a report or incident, in short circuit format
+# Obtain a value from a report or incident, in short circuit
 # (ie, the first element to match, wins)
 sub _value ($$$)
 {
@@ -195,9 +197,13 @@ sub _value ($$$)
 	{
 	    return $r_dollars->{$1} if exists $r_dollars->{$1};
 	}
+	elsif ($spec =~ m/^\$ENV{([^}]+)}$/)
+	{
+	    return $ENV{$1};
+	}
 
 	my @things = split /\./, $spec;
-
+ 
 	my $r = $obj;
 	my @own = @things;
 
@@ -208,7 +214,7 @@ sub _value ($$$)
 		unless (ref $r eq 'ARRAY')
 		{
 		    warn "ArchiveDBI: Invalid type for $spec\n";
-		    $r = undef;
+		    undef $r;
 		    last;
 		}
 		$r = $r->[$c];
@@ -227,7 +233,7 @@ sub _value ($$$)
 		else
 		{
 #		    warn "ArchiveDBI: Invalid type for $spec\n";
-		    $r = undef;
+		    undef $r;
 		    last;
 		}
 	    }
@@ -253,7 +259,8 @@ sub process
 	$dbh = DBI->connect($DSN, $LOGIN, $PASSWORD,
 			    { 
 				AutoCommit => 1,
-				RaiseError => 1,
+				RaiseError => 0,
+				PrintError => 1,
 			    },
 			    );
 	
@@ -335,7 +342,7 @@ sub process
     {
 	warn "# Values for this report:\n";
 	warn "#   $_ = " . 
-	    (defined($rep_values{$_}) ? $rep_values{$_} : 'undef') . "\n" 
+	    (defined($rep_values{$_}) ? $rep_values{$_} : 'UNDEF') . "\n" 
 	    for @cols_rep;
     }    
 
@@ -359,7 +366,7 @@ sub process
 	{
 	    warn "# Values for incident $num:\n";
 	    warn "#   $_ = " . 
-		(defined($inc_values{$_}) ? $inc_values{$_} : 'undef') . "\n" 
+		(defined($inc_values{$_}) ? $inc_values{$_} : 'UNDEF') . "\n" 
 		for @cols_inc;
 	}    
 
@@ -385,6 +392,24 @@ None by default.
 =head1 HISTORY
 
 $Log: ArchiveDBI.pm,v $
+Revision 1.6  2006/03/22 19:15:14  lem
+Remove extraneous < - Thanks to Landon Steward for pointing this out
+
+Revision 1.5  2006/03/13 23:20:29  lem
+Make errors simply display warnings but keep processing. In some
+instances abuse reports can be re-fed into the pipeline. This causes
+these reports to not stall processing.
+
+Revision 1.4  2006/02/21 16:59:53  lem
+Added support for $ENV{...} in the column specifications, so that a
+source/class can be attached to each report.
+
+Revision 1.3  2005/11/14 00:36:34  lem
+Minor edits (typos, golfing).
+
+Revision 1.2  2005/03/31 19:11:34  lem
+undef variables properly. Slight change in the 'debug' messages.
+
 Revision 1.1  2005/03/21 20:06:15  lem
 Initial support for Mail::Abuse::Processor::ArchiveDBI
 
@@ -399,7 +424,7 @@ same terms as Perl itself.
 
 =head1 AUTHOR
 
-Luis E. MuÒoz <luismunoz@cpan.org>
+Luis E. Mu√±oz <luismunoz@cpan.org>
 
 =head1 SEE ALSO
 

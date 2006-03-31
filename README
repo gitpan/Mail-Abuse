@@ -4,8 +4,19 @@ Hash: SHA1
 
 Mail::Abuse - A suite of tools to parse and process abuse reports
 
-*** This version of the code is not to be regarded as stable software.
-*** It is under significant development.
+Abuse desks  charged with the  task of responding to  abuse complaints
+against its users face a time consuming and complex challenge. It's my
+belief that  this is one of  the contributing reasons  for the general
+lack of  response that can be  observed in many  network operations in
+these days.
+
+I wrote this  module bundle to help with the first  steps of the abuse
+management process,  namely the correlation and  identification of the
+abuse sources within your own  network. This is discussed in much more
+detail  on  my  3   part  article  "Implementing  an  Effective  Abuse
+Management Process", published in  SysAdmin magazine on June, July and
+August 2005. You  should grab it if you have a  chance, as this series
+also includes a tutorial on how to set up your Mail::Abuse platform.
 
 This bundle includes various  modules with different purposes, as seen
 below:
@@ -90,6 +101,14 @@ cases where warnings are generated so that I can fix them.
 
 Report your bugs to me (luismunoz@cpan.org).
 
+DO YOU WANT TO THANK ME?
+
+If  you consider this  a valuable  contribution, there  is a  web page
+where you can express your gratitude. Please see
+
+	http://mipagina.cantv.net/lem/thanks-en.html (English)
+	http://mipagina.cantv.net/lem/thanks-es.html (Spanish)
+
 SECURITY CONSIDERATIONS
 
 I  have  no control  on  the machanisms  involved  in  the storage  or
@@ -112,18 +131,17 @@ that this README file should also be signed.
 
 LICENSE AND WARRANTY
 
-This software is (c) Luis E. Muñoz.  It can be used under the terms of
+This software is (c) Luis E. MuÃ±oz.  It can be used under the terms of
 the perl artistic license provided  that proper credit for the work of
 the  author is  preserved in  the form  of this  copyright  notice and
 license for this module.
 
 No warranty of any kind is  expressed or implied. This code might make
 your computer go up in a puff of black smoke.
-
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.2.1 (Darwin)
 
-iD8DBQE/raq7QyDWGRI/hhARAhAhAJsG50sblCcvoix2zjbcAe67cAAmOACdGAbq
-PPPlRVuETZERqV0i5Vbhh2Q=
-=01kh
+iD8DBQFELUbGQyDWGRI/hhARArTRAJ4mthg/GpLsVMuwvb/vEG2xMP5LNwCfa94s
+jcEAsr19Q3A0VHbkoMnkVU4=
+=RbOQ
 -----END PGP SIGNATURE-----

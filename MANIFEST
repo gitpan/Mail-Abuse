@@ -7,12 +7,14 @@ bin/popfetch
 bin/requester
 bin/scan
 bin/spews-scan
+contrib/serial2plain
 etc/abuso.config
 etc/archive.sql
 etc/fail.template
 etc/requester.template
 etc/sample.conf
 etc/success.template
+etc/tabledbi.sql
 lib/Mail/Abuse.pm
 lib/Mail/Abuse/Filter.pm
 lib/Mail/Abuse/Filter/IP.pm
@@ -31,17 +33,21 @@ lib/Mail/Abuse/Processor/Radius.pm
 lib/Mail/Abuse/Processor/Score.pm
 lib/Mail/Abuse/Processor/Store.pm
 lib/Mail/Abuse/Processor/Table.pm
+lib/Mail/Abuse/Processor/TableDBI.pm
 lib/Mail/Abuse/Reader.pm
 lib/Mail/Abuse/Reader/GoogleGroups.pm
 lib/Mail/Abuse/Reader/POP3.pm
 lib/Mail/Abuse/Reader/Stdin.pm
 lib/Mail/Abuse/Report.pm
+lib/Template/Plugin/Abuse.pm
 Makefile.PL
 MANIFEST			This list of files
 MANIFEST.SKIP
 META.yml
 README
+t/00-load-tt.t
 t/00-load.t
+t/00-pod.t
 t/arcdbi.t
 t/config.t
 t/explain.t
@@ -62,6 +68,8 @@ t/score.t
 t/spamcop.t
 t/stdin.t
 t/store.t
+t/storenew.t
 t/table.t
+t/tabledbi.t
 t/time.t
 TESTING

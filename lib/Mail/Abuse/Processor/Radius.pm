@@ -5,7 +5,7 @@ require 5.005_62;
 use Carp;
 use strict;
 use warnings;
-use IO::Zlib;
+use PerlIO::gzip;
 use IO::File;
 use File::Find;
 use Date::Parse;
@@ -14,7 +14,7 @@ use base 'Mail::Abuse::Processor';
 
 				# The code below should be in a single line
 
-our $VERSION = do { my @r = (q$Revision: 1.5 $ =~ /\d+/g); sprintf " %d."."%03d" x $#r, @r };
+our $VERSION = do { my @r = (q$Revision: 1.6 $ =~ /\d+/g); sprintf " %d."."%03d" x $#r, @r };
 
 our @Ignore = (qw/NAS-IP-Address/);
 
@@ -291,16 +291,9 @@ sub process
 	    warn "M::A::P::Radius: Processing $File::Find::name\n" 
 		if $debug;
 
-	    if ($File::Find::name =~ m/\.gz$/)
-	    {
-		$fh = new IO::Zlib;
-	    }
-	    else
-	    {
-		$fh = new IO::File;
-	    }
+	    $fh = new IO::File;
 
-	    unless ($fh->open($File::Find::name, "r"))
+	    unless ($fh->open($File::Find::name, "<:gzip(autopop)"))
 	    {
 		warn "M::A::P::Radius: Open of $File::Find::name failed: $!\n";
 		return;
@@ -356,7 +349,7 @@ same terms as Perl itself.
 
 =head1 AUTHOR
 
-Luis E. MuÒoz <luismunoz@cpan.org>
+Luis E. Mu√±oz <luismunoz@cpan.org>
 
 =head1 SEE ALSO
 

@@ -9,7 +9,7 @@ require Exporter;
 
 				# The code below should be in a single line
 
-our $VERSION = do { my @r = (q$Revision: 1.23 $ =~ /\d+/g); sprintf " %d."."%03d" x $#r, @r };
+our $VERSION = do { my @r = (q$Revision: 1.25 $ =~ /\d+/g); sprintf " %d."."%03d" x $#r, @r };
 
 "I'm just a placeholder module";
 
@@ -32,7 +32,7 @@ sophisticated tools to deal with the complains.
 
 C<Mail::Abuse> is actually a bundle of modules that provide various
 services. This documentation provides a general description of the
-functions provided by each one. No useful code is provide in the
+functions provided by each one. No useful code is provided in the
 C<Mail::Abuse> module, appart from this documentation and the version
 information below.
 
@@ -85,6 +85,33 @@ None by default.
 =head1 HISTORY
 
 $Log: Abuse.pm,v $
+Revision 1.25  2006/03/31 15:17:10  lem
+New release. Notable changes include:
+
+Various improvements in the message handling of Incident::Normalize.
+
+::Incident::Log knows about some ClamAV headers, so it's not that
+biased towards marking a spam complaint as a virus complaint.
+
+Added ::Processor::TableDBI.
+
+::Processor::Store can now compress stored reports. It also supports
+storing the text of the report only.
+
+See the examples and scripts that come with this release to see
+further changes.
+
+Revision 1.24  2005/06/09 17:57:01  lem
+Fixed small typo.
+
+This new release features cleaner tests. Also lookups in DBI data
+sources for things like IP pool assignments, Radius and DHCP logs and
+similar data makes it easier to scale up to larger operations.
+
+Mail::Abuse::Reader::GoogleGroups will likely be deprecated from
+production use at a later release. It is non-functional since Google
+Groups Beta replaced the traditional interface.
+
 Revision 1.23  2005/03/16 22:15:09  lem
 Added Mail::Abuse::Processor::Score
 
@@ -108,7 +135,6 @@ Changes to ::Incident::Log. Added requester. Changed doc structure to
 include the CVS log in the docs, altough this is not that useful for
 this module.
 
-
 =head1 LICENSE AND WARRANTY
 
 This code and all accompanying software comes with NO WARRANTY. You
@@ -119,7 +145,7 @@ same terms as Perl itself.
 
 =head1 AUTHOR
 
-Luis E. Muñoz <luismunoz@cpan.org>
+Luis E. MuÃ±oz <luismunoz@cpan.org>
 
 =head1 SEE ALSO
 

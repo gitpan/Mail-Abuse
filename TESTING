@@ -15,6 +15,13 @@ BASH-compatible shell
 
 and rerun the tests.
 
+Note that the GoogleGroups reader is currently broken since the
+interface changes. Patches will be incorporated to the distribution
+after light testing, but no active development by the author is going
+on in this module.
+
+This may be deprecated in future releases.
+
 Testing POP3
 ============
 

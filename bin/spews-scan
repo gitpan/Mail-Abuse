@@ -3,14 +3,14 @@
 use strict;
 use warnings;
 
-# $Id: spews-scan,v 1.1 2004/03/10 20:19:10 lem Exp $
+# $Id: spews-scan,v 1.2 2005/11/03 13:39:46 lem Exp $
 
 use Pod::Usage;
 use NetAddr::IP;
 use Getopt::Std;
 use WWW::Mechanize;
 
-our $VERSION = do { my @r = (q$Revision: 1.1 $ =~ /\d+/g); sprintf " %d."."%03d" x $#r, @r };
+our $VERSION = do { my @r = (q$Revision: 1.2 $ =~ /\d+/g); sprintf " %d."."%03d" x $#r, @r };
 
 =pod
 
@@ -115,9 +115,13 @@ The output is (mostly) human readable.
 =over
 
 $Log: spews-scan,v $
+Revision 1.2  2005/11/03 13:39:46  lem
+Added a missing =back
+
 Revision 1.1  2004/03/10 20:19:10  lem
 Added bin/spews-scan
 
+=back
 
 =head1 LICENSE AND WARRANTY
 
@@ -129,7 +133,7 @@ same terms as Perl itself.
 
 =head1 AUTHOR
 
-Luis E. Muñoz <luismunoz@cpan.org>
+Luis E. MuÃ±oz <luismunoz@cpan.org>
 
 =head1 SEE ALSO
 

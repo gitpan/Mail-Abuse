@@ -12,7 +12,7 @@ use base 'Mail::Abuse::Incident';
 
 				# The code below should be in a single line
 
-our $VERSION = do { my @r = (q$Revision: 1.22 $ =~ /\d+/g); sprintf " %d."."%03d" x $#r, @r };
+our $VERSION = do { my @r = (q$Revision: 1.24 $ =~ /\d+/g); sprintf " %d."."%03d" x $#r, @r };
 
 =pod
 
@@ -180,15 +180,15 @@ sub parse
 
     my %rules = (
 		 'copyright'	=> qr(copyright\W+infringement
-				      |rights|media|kazaa|DMCA|BSA|MPAA
-				      |RIAA|copyrighted\W+material)ix,
+				      |rights|media|kazaa|edonkey|DMCA|BSA
+				      |MPAA|RIAA|copyrighted\W+material
+				      |(anti-?)?piracy)ix,
 		 'virus'	=> qr(virus|worm)ix,
 		 'proxy'	=> qr(proxy|socks|squid)ix,
-		 'network'	=> qr(scan|ids|intrusion
-				      |firewall|portscan|connection
-				      |unauthorized)ix,
+		 'network'	=> qr(scan|ids|intrusion|firewall
+				      |portscan|connection)ix,
 		 'spam'		=> qr(spam|uce|ube|unsolicited|mass
-				      |e?smtp)ix,
+				      x-virus-|e?smtp)ix,
 		 );
 
     my %scores = map { $_ => 0 } keys %rules;
@@ -421,7 +421,7 @@ same terms as Perl itself.
 
 =head1 AUTHOR
 
-Luis E. Muñoz <luismunoz@cpan.org>
+Luis E. MuÃ±oz <luismunoz@cpan.org>
 
 =head1 SEE ALSO
 

@@ -1,15 +1,15 @@
 
-# $Id: radius.t,v 1.4 2005/02/25 23:19:40 lem Exp $
+# $Id: radius.t,v 1.5 2005/11/05 23:20:37 lem Exp $
 
 # Check the basic parsing and recognition of events from different types
 # of Radius detail / accounting files.
 
 use IO::File;
-use IO::Zlib;
 use Test::More;
 use File::Path;
 use Date::Parse;
 use NetAddr::IP;
+use PerlIO::gzip;
 use Mail::Abuse::Reader;
 use Mail::Abuse::Report;
 use Mail::Abuse::Incident;
@@ -95,8 +95,8 @@ for my $mode (keys %mode)
 
     $name .= '.gz';
 
-    $fh = new IO::Zlib;
-    unless ($fh->open(catfile($path, $mode, $name), "w"))
+    $fh = new IO::File;
+    unless ($fh->open(catfile($path, $mode, $name), ">:gzip"))
     {
 	die "Failed to create detail file: ", 
 	catfile($path, $mode, $name), ": $!\n";

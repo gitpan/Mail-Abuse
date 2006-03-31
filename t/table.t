@@ -1,5 +1,5 @@
 
-# $Id: table.t,v 1.1 2004/02/05 22:41:50 lem Exp $
+# $Id: table.t,v 1.2 2005/06/09 15:04:31 lem Exp $
 
 use IO::File;
 use Test::More;
@@ -10,11 +10,11 @@ my $table	= './table.' . $$;
 
 our %incidents = 
     (
-     10.10.10.10 => 'This is a valid incident',
-     10.10.10.11 => 'This is a valid incident',
-     10.10.10.12 => 'This is a valid incident',
-     10.10.20.20 => 'This is an invalid incident',
-     10.10.20.21 => 'This is an invalid incident',
+     '10.10.10.10' => 'This is a valid incident',
+     '10.10.10.11' => 'This is a valid incident',
+     '10.10.10.12' => 'This is a valid incident',
+     '10.10.20.20' => 'This is an invalid incident',
+     '10.10.20.21' => 'This is an invalid incident',
      );
 
 my $tests = 2 + 2 * keys %incidents;

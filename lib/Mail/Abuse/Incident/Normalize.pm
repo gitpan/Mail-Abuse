@@ -12,7 +12,7 @@ use base 'Mail::Abuse::Incident';
 
 				# The code below should be in a single line
 
-our $VERSION = do { my @r = (q$Revision: 1.8 $ =~ /\d+/g); sprintf " %d."."%03d" x $#r, @r };
+our $VERSION = do { my @r = (q$Revision: 1.11 $ =~ /\d+/g); sprintf " %d."."%03d" x $#r, @r };
 
 =pod
 
@@ -112,9 +112,9 @@ sub parse
 	 default_h		=> [ "" ],
 	 start_h => [ sub {  $ {$rep->body} .= 
 				 "[IMG " . 
-				     ($_[1]->{alt} || $_[1]->{src}) . 
+				     ($_[1]->{alt} || $_[1]->{src} || 'n/a') . 
 					 "]\n" 
-					     if $_[0] eq 'img';
+					     if $_[0] && $_[0] eq 'img';
 			 }, "tagname, attr" ],
 	 text_h => [ sub { $ {$rep->body} .= shift; }, "dtext" ],
 	 ) or return;
@@ -147,10 +147,9 @@ sub parse
     my $text;
     $rep->header($e->head);
     $rep->body(\$text);
-    
-    $rep->body($self->decode_parts($rep, 'text/plain', $e) || 
-	       $self->decode_parts($rep, 'text/html', $e) || 
-	       $self->decode_parts($rep, 'any', $e));
+
+    my $decoded_body = ($self->decode_parts($rep, 'any', $e) || '');
+    $rep->body(\$decoded_body) if $decoded_body;
 
     $rep->normalized(ref $self);
     $self->html_parser(undef);
@@ -285,25 +284,22 @@ sub decode_parts
 
     if (my @parts = $e->parts)
     {
-	for my $p (@parts)
-	{
-	    my $r = $self->decode_parts($rep, $type, $p);
-	    return $r if $r;
-	}
+	my $r = '';
+	$r .= ($self->decode_parts($rep, $type, $_) || '') for @parts;
+	return $r;
     }
     elsif (my $body = $e->bodyhandle)
     {
 	my $mime = $e->head->mime_type;
 	if (grep { $mime eq $_ } qw(text/plain message/rfc822))
 	{
-	    my $b = $body->as_string;
-	    return \$b;
+	    return $body->as_string;
 	}
 	elsif ($type eq 'any' and $mime eq 'text/html')
 	{
 	    my $b = $body->as_string;
 	    $self->html_parser->parse($b);
-	    return $rep->body;
+	    return $ {$rep->body};
 	}
     }
     return;			# False by default
@@ -346,7 +342,7 @@ same terms as Perl itself.
 
 =head1 AUTHOR
 
-Luis E. Muñoz <luismunoz@cpan.org>
+Luis E. MuÃ±oz <luismunoz@cpan.org>
 
 =head1 SEE ALSO
 

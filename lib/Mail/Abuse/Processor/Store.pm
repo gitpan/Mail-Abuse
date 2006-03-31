@@ -7,21 +7,24 @@ use strict;
 use warnings;
 use Data::Dumper;
 
+use IO::File;
 use File::Path;
 use File::Spec;
+use PerlIO::gzip;
 use POSIX qw(strftime);
-use Storable qw/nstore/;
+use Storable qw/nstore_fd/;
 use Digest::MD5 qw/md5_hex/;
 
 use base 'Mail::Abuse::Processor';
 
 use constant ROOT	=> 'store root path';
 use constant EMPTY	=> 'store empty path';
+use constant MODE	=> 'store mode';
 use constant DEBUG	=> 'debug store';
 
 				# The code below should be in a single line
 
-our $VERSION = do { my @r = (q$Revision: 1.10 $ =~ /\d+/g); sprintf " %d."."%03d" x $#r, @r };
+our $VERSION = do { my @r = (q$Revision: 1.12 $ =~ /\d+/g); sprintf " %d."."%03d" x $#r, @r };
 
 =pod
 
@@ -64,6 +67,34 @@ stored. Defaults to the current directory.
 The name of the leaf where reports with no incidents are stored. This
 is a subdir of B<store root path>. It defaults to the very creative
 name, "empty".
+
+=item B<store mode>
+
+The mode in which to store abuse reports. The following modes are
+supported.
+
+=over
+
+=item B<serialized>
+
+This is the default, and uses L<Storable> to serialize the in-memory
+C<Mail::Abuse::Report> object and store it in a flat file.
+
+=item B<serialized-gz>
+
+Just like B<serialized>, but the resulting file is compressed with the
+equivalent of L<gzip>, using L<PerlIO::gzip>.
+
+=item B<plain>
+
+Store only the report text, as a flat file.
+
+=item B<plain-gz>
+
+Just like B<plain> but the resulting file is compressed on the fly
+using L<PerlIO::gzip>.
+
+=back
 
 =item B<debug store>
 
@@ -171,22 +202,56 @@ sub process
 	warn "Store: $file already exists. Not overriden\n";
 	return 1;
     }
+
+    $rep->store_file($file);
+
+    my $fh = new IO::File;
+
+    if (exists $rep->config->{&MODE}
+	and $rep->config->{&MODE} =~ m/-gz$/)
+    {
+	unless ($fh->open($file, ">:gzip"))
+	{
+	    warn "Store: Failed to gz-open $file: $!\n";
+	    return;
+	}
+    }
     else
     {
-	$rep->store_file($file);
+	unless ($fh->open($file, ">"))
+	{
+	    warn "Store: Failed to open $file: $!\n";
+	    return;
+	}
+    }
+
+    if (not exists $rep->config->{&MODE}
+	or $rep->config->{&MODE} =~ m/^serialized/)
+    {
 	eval 
 	{ 
-	    nstore($rep, $file) 
+	    nstore_fd($rep, $fh) 
 		|| warn "Storable::nstore_fd failed with $!\n";
 	};
+	
+	if ($@)
+	{
+	    warn "Store: Failed to nstore: $@\n";
+	    return;
+	}
+
+    }
+    elsif ($rep->config->{&MODE} =~ m/^plain/)
+    {
+	print $fh ${$rep->text};
     }
 
-    if ($@)
+    unless ($fh->close)
     {
-	warn "Store: Failed to nstore: $@\n";
+	warn "Failed to close $file: $!\n";
 	return;
     }
-
+    
     return 1;
 }
 
@@ -227,7 +292,7 @@ same terms as Perl itself.
 
 =head1 AUTHOR
 
-Luis E. Muñoz <luismunoz@cpan.org>
+Luis E. MuÃ±oz <luismunoz@cpan.org>
 
 =head1 SEE ALSO
 

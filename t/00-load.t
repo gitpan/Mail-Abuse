@@ -1,5 +1,5 @@
 
-# $Id: 00-load.t,v 1.20 2005/03/21 23:43:30 lem Exp $
+# $Id: 00-load.t,v 1.22 2005/11/03 13:39:27 lem Exp $
 
 use Test::More;
 
@@ -24,34 +24,14 @@ my @modules = qw/
 	Mail::Abuse::Processor::Explain
 	Mail::Abuse::Incident::Received
 	Mail::Abuse::Incident::Normalize
+	Mail::Abuse::Processor::TableDBI
 	Mail::Abuse::Processor::ArchiveDBI
 	Mail::Abuse::Incident::MyNetWatchman
 	/;
 #	Mail::Abuse::Reader::GoogleGroups
 
-my @paths = ();
-
-plan tests => 2 * scalar @modules;
+plan tests => scalar @modules;
 
 use_ok($_) for @modules;
 
-my $checker = 0;
 
-eval { require Test::Pod;
-     Test::Pod::import();
-       $checker = 1; };
-
-for my $m (@modules)
-{
-    my $p = $m . ".pm";
-    $p =~ s!::!/!g;
-    push @paths, $INC{$p};
-}
-
-END { unlink "./out.$$" };
-
-SKIP: {
-    skip "Test::Pod is not available on this host", scalar @paths
-	unless $checker;
-    pod_file_ok($_) for @paths;
-}

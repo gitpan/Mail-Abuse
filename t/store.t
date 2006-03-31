@@ -1,5 +1,5 @@
 
-# $Id: store.t,v 1.6 2003/11/11 15:33:55 lem Exp $
+# $Id: store.t,v 1.8 2005/11/14 00:14:51 lem Exp $
 
 use Storable;
 use IO::File;
@@ -66,6 +66,7 @@ sub write_config
     return undef unless print $fh <<EOF;
 # This is a config file
 store root path: test$$
+#store mode: serialized-gz
 #debug store: on
 EOF
     ;

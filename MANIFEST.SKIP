@@ -9,7 +9,7 @@ CVS/.*
 \.old$
 \.bak$
 ~$
-^#
+\#
 \.shar$
 \.tar$
 \.tgz$

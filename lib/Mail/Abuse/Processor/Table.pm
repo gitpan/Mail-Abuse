@@ -5,7 +5,7 @@ require 5.005_62;
 use Carp;
 use strict;
 use warnings;
-use IO::Zlib;
+use PerlIO::gzip;
 use IO::File;
 use NetAddr::IP;
 use Tie::NetAddr::IP;
@@ -14,7 +14,7 @@ use base 'Mail::Abuse::Processor';
 
 				# The code below should be in a single line
 
-our $VERSION = do { my @r = (q$Revision: 1.1 $ =~ /\d+/g); sprintf " %d."."%03d" x $#r, @r };
+our $VERSION = do { my @r = (q$Revision: 1.2 $ =~ /\d+/g); sprintf " %d."."%03d" x $#r, @r };
 
 our %Table = ();
 
@@ -114,18 +114,9 @@ sub _parse_table ($)
 
     return if %Table;		# do nothing if this is populated
 
-    my $fh;
+    my $fh = new IO::File;
 
-    if ($loc =~ /\.gz$/)
-    {
-	$fh = new IO::Zlib;
-    }
-    else
-    {
-	$fh = new IO::File;
-    }
-
-    unless ($fh->open($loc))
+    unless ($fh->open($loc, '<:gzip(autopop)'))
     {
 	die "M::A::P::Table: Failed to open table $loc: $!\n";
     }
@@ -215,6 +206,9 @@ None by default.
 =head1 HISTORY
 
 $Log: Table.pm,v $
+Revision 1.2  2005/11/05 23:20:37  lem
+Replaced IO::Zlib with PerlIO::gzip.
+
 Revision 1.1  2004/02/05 22:41:50  lem
 Added Mail::Abuse::Processor::Table, which requires
 Tie::NetAddr::IP. This module will allow for matching 'fixed' address
@@ -233,7 +227,7 @@ same terms as Perl itself.
 
 =head1 AUTHOR
 
-Luis E. MuÒoz <luismunoz@cpan.org>
+Luis E. Mu√±oz <luismunoz@cpan.org>
 
 =head1 SEE ALSO
 

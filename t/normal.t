@@ -1,9 +1,9 @@
 
-# $Id: normal.t,v 1.4 2003/11/03 22:46:53 lem Exp $
+# $Id: normal.t,v 1.5 2006/03/14 00:04:38 lem Exp $
 
 use Test::More;
 
-our @Zones = qw/+0300 +0800 +0100 +0400 -0400 -0700 +0000/;
+our @Zones = qw/+0300 +0800 +0100 +0400 -0400 -0700 +0000 UTC/;
 our @msgs = ();
 
 {
@@ -73,8 +73,11 @@ SKIP:
 	ok(defined $rep->header, "There is a header");
 	ok(defined $rep->body, "There is a body");
 	is($rep->header->get('X-Test-Header'), "ok\n");
-	ok($ {$rep->body} =~ /^\s*THIS IS THE TEXT WE LOOK FOR/ms,
-	   "Body parsed properly");
+	unless (ok($ {$rep->body} =~ /^\s*THIS IS THE TEXT WE LOOK FOR/ms,
+	   "Body parsed properly"))
+	{
+	    diag "Body: ", $ {$rep->body}, "\n\n";
+	}
 #	diag "$m becomes ${$rep->body}\n";
 	is($rep->normalized, "Mail::Abuse::Incident::Normalize");
 	is($rep->tz, shift @Zones, "Correct timezone guessed");
@@ -331,5 +334,150 @@ Content-Transfer-Encoding: 8bit
 </html>
 
 ------=_NextPart_3B7HIBD2K0C20BAL8IDB19CJK--
+
+*EOM
+Return-Path: <scomp@bigisp.net>
+Received: from omr-m04.mx.aol.com (omr-m04.mx.aol.com [10.12.138.5])
+        by rs34s6.datacenter.cha.mynetwork.some.where (8.11.6/8.11.6) with ESMTP id k0S4kIB12142
+        for <abuse-aol@abuso.mynetwork.some.where>; Sat, 28 Jan 2006 00:46:18 -0400
+Received: from  scmp-m22.mail.aol.com (scmp-m22.mail.aol.com [10.21.28.105]) by omr-m04.mx.aol.com (v107.10) with ESMTP id RELAYIN3-443daf70f152; Fri, 27 Jan 2006 23:46:07 -0500
+Received: from  imo-m28.mx.aol.com (imo-m28.mail.aol.com [10.20.107.74]) by scmp-m22.mail.aol.com (v98.19) with ESMTP id RELAYIN4-543daf709282; Fri, 27 Jan 2006 23:46:01 -0500
+Received: from undisclosed@undisclosed.com
+        by imo-m28.mx.aol.com (mail_out_v38_r6.3.) id f.f6.60a93eea (57317)
+         for <scomp@bigisp.net>; Fri, 27 Jan 2006 23:45:55 -0500 (EST)
+From: <scomp@bigisp.net>
+Message-ID: <f6.60a93eea.310c5103@aol.com>
+Date: Fri, 27 Jan 2006 23:45:55 EST
+Subject: Client TOS Notification
+To: <undisclosed_recipients@aol.com>
+MIME-Version: 1.0
+Content-Type: multipart/mixed; boundary="part1_f6.60a93eea.310c5103_boundary"
+X-Test-Header: ok
+X-Loop: scomp
+
+
+--part1_f6.60a93eea.310c5103_boundary
+Content-Type: text/plain; charset="US-ASCII"
+Content-Transfer-Encoding: 7bit
+
+ 
+
+--part1_f6.60a93eea.310c5103_boundary
+Content-Type: message/rfc822
+Content-Disposition: inline
+
+Return-Path: <ynbnpyok@4dcomputergraphics.com>
+Received: from  rly-yj01.mx.aol.com (rly-yj01.mail.aol.com [10.18.180.139]) by air-yj04.mail.aol.com (v108_r1_b1.2) with ESMTP id MAILINYJ41-7f343cac01b104; Sun, 15 Jan 2006 16:35:50 -0500
+Received: from  rs26s12.datacenter.cha.mynetwork.some.where (rs26s12.datacenter.cha.mynetwork.some.where [200.44.33.31]) by rly-yj01.mx.aol.com (v108_r1_b1.2) with ESMTP id MAILRELAYINYJ17-7f343cac01b104; Sun, 15 Jan 2006 16:35:26 -0500
+Received: from accounting_nt.4estall.com (dC854B2BF.dslam-01-5-5-01-1-01.ejd.dsl.mynetwork.some.where [10.84.178.191])
+        by rs26s12.datacenter.cha.mynetwork.some.where (8.13.4/8.13.0/3.0) with ESMTP id k0FLYtLF015242;
+        Sun, 15 Jan 2006 17:35:20 -0400
+X-Matched-Lists: []
+Received: from 4dcomputergraphics.com ([10.214.242.22])
+          by vbm.4dcomputergraphics.com
+          (InterMail vK.4.04.00.00 851-426-100 license 5wn240zz3332h1lx3d8lok2673b3pdd1)
+          with ESMTP id <20035274886533.HZRC6801.n8oq3_8215uBX5WIjd27@4dcomputergraphics.com>
+          for <ktagliavia@aol.com>; Sun, 15 Jan 2006 13:35:14 -0800
+Date: Sun, 15 Jan 2006 13:35:14 -0800
+From: "Andy Whitney" <ynbnpyok@4dcomputergraphics.com>
+Subject: This company positioned to Grow
+To: <Undisclosed Recipients>
+References: <U5ftSiI3zQVUac7G2fvmln@4dcomputergraphics.com>
+In-Reply-To: <89f89T3j6lLcQo8GI_42Q@4dcomputergraphics.com>
+Message-ID: <d2DI7_C5wSpJ60uw2PiVz@4dcomputergraphics.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
+X-Virus-Scanned: ClamAV version 0.88, clamav-milter version 0.87 on rs26s12.datacenter.cha.mynetwork.some.where
+X-Virus-Status: Clean
+X-Mailer: Unknown (No Version)
+
+THIS IS THE TEXT WE LOOK FOR
+Smart Money Equities - Issue 1, Vol. 4
+
+
+Smart Money Equities would like to thank our valued
+readers for making 2005 a great year.  Please continue
+to support Smart Money Equities by visiting our
+sponsors and featured advertisers.
+
+Here's our next big winner:
+
+Vinoble, Inc.
+
+Symb0l: VNBL
+Price: .04
+Short_Term: .09
+Long_Term: .20
+Recommendati0n: (BUY)
+
+To All Members:
+
+After extensive research we have picked our Best
+winner for the beginning of the year. It is going to be on
+the move and NOT stopping. Do Not Miss this
+opportunity to turn your 500 into 2500 or 1000 into
+5,000. Remember this is your chance to cash in for
+the beginning of the year.
+
+What we all know:
+
+- America is involved in a war on terror.
+- World oil prices are holding strong at record levels.
+- world gold prices are holding strong at record levels.
+
+And here comes Vinoble in the right place at the right
+time:
+
+VNBL has been working with RFID (Radio Frequency
+ID) as it relates to the oil and mining industry. This
+technology allows for remote tracking of assets,
+personnel, and environmental conditions.
+
+RFID technology can create "High Security Space" in
+locales where it is deemed necessary. With the current
+threat to America and its resources RFID technology is
+being deployed all over the country.
+
+Vinoble has recently acquired an interest in a number of
+oil and mining projects, with intent of using these
+properties as a testing ground for their technology as
+well as add shareholder value.
+
+We believe that Vinoble has an impressive product at
+the right time. Make sure you keep an eye on this
+company especially tomorrow!
+
+The stock is currently trading at around 4-5 cents. At
+this price it could mean large profits in the very near
+future.
+
+We believe the time to get in is now.  This st0ck is
+brewing in the most profitable industries in the market.
+Just imagine how much it will take off in the new-year
+as the market takes off again.
+
+As always, trade smart and have fun!
+
+__________________________________________
+
+
+Informati0n within this emai| c0ntains
+"f0rw4rd_l00king st4tements" within the meaning of
+Sect1on 27A_of the Secur1t1es_Act of_1933 and
+Sect10n 21B of the_Secur1t1es Exch4nge_Act
+of_1934. Any_st4tements that express or inv0|ve
+discussi0ns with respect to predicti0ns,_g0als,
+expectati0ns, be|iefs, p|ans, pr0jecti0ns, 0bjectives
+,assumptions or future events or performance are not
+statements of hist0rical fact and may be "f0rw4rd
+l00k1ng statements."In c0mpliance with
+Sect10n_17(b), we disc|ose the p4yment of_5OOO
+do||ars pri0r to the pub|ication of this report. Be aware
+of an inherent conflict of interest resulting from such
+p4yment.
+
+
+--part1_f6.60a93eea.310c5103_boundary--
 
 *EOM
