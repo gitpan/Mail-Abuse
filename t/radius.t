@@ -1,5 +1,6 @@
+#!/usr/bin/perl
 
-# $Id: radius.t,v 1.5 2005/11/05 23:20:37 lem Exp $
+# $Id: radius.t,v 1.6 2006/09/28 20:12:14 lem Exp $
 
 # Check the basic parsing and recognition of events from different types
 # of Radius detail / accounting files.
@@ -98,7 +99,7 @@ for my $mode (keys %mode)
     $fh = new IO::File;
     unless ($fh->open(catfile($path, $mode, $name), ">:gzip"))
     {
-	die "Failed to create detail file: ", 
+	die "Failed to create gzipped detail file: ", 
 	catfile($path, $mode, $name), ": $!\n";
     }
     print $fh $details[$mode{$mode}];
@@ -130,12 +131,22 @@ for my $mode (keys %mode)
 	    processors	=> [ new Mail::Abuse::Processor::Radius ],
 	};
 
+	diag "mode     = $mode";
+	diag "location = $location";
 	isa_ok($rep, 'Mail::Abuse::Report');
 	$rep->next;
-	is(ref($rep->incidents->[0]->radius), 'HASH',
-	   "Incident zero matched");
-	is(ref($rep->incidents->[1]->radius), 'HASH',
-	   "Incident one matched");
+	unless (is(ref($rep->incidents->[0]->radius), 'HASH',
+		   "Incident zero matched"))
+	{
+	    use Data::Dumper;
+	    diag '$rep is: ', Data::Dumper->Dump([$rep]), "\n";
+	}
+	unless (is(ref($rep->incidents->[1]->radius), 'HASH',
+		   "Incident one matched"))
+	{
+	    use Data::Dumper;
+	    diag '$rep is: ', Data::Dumper->Dump([$rep]), "\n";
+	}
 	ok(! defined $rep->incidents->[2]->radius,
 	   "Incident two missed");
 	is($rep->incidents->[0]->radius->{'Acct-Authentic'},

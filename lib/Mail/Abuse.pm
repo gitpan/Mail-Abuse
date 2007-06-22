@@ -9,9 +9,10 @@ require Exporter;
 
 				# The code below should be in a single line
 
-our $VERSION = do { my @r = (q$Revision: 1.25 $ =~ /\d+/g); sprintf " %d."."%03d" x $#r, @r };
+our $VERSION = do { my @r = (q$Revision: 1.26 $ =~ /\d+/g); sprintf " %d."."%03d" x $#r, @r };
 
 "I'm just a placeholder module";
+
 
 __END__
 
@@ -85,6 +86,9 @@ None by default.
 =head1 HISTORY
 
 $Log: Abuse.pm,v $
+Revision 1.26  2007/06/22 20:44:23  lem
+Fixed a test error pointed out by Mark Overmeer. Thanks MarkOv!
+
 Revision 1.25  2006/03/31 15:17:10  lem
 New release. Notable changes include:
 

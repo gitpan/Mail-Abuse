@@ -1,5 +1,5 @@
 
-# $Id: arcdbi.t,v 1.1 2005/03/21 20:06:14 lem Exp $
+# $Id: arcdbi.t,v 1.3 2007/06/22 20:41:36 lem Exp $
 
 # Check the DBI archiving
 
@@ -134,7 +134,6 @@ ok(-f 'Incidents', 'incidents table exists - More of a test harness issue');
 my $csv = Text::CSV_XS->new({
     sep_char	=> ',',
     eol		=> "\n",
-    
 });
 
 my $fh = new IO::File 'Reports';
@@ -152,7 +151,7 @@ is($cols->[2], 1, "Correct score");
 ok($cols->[3] <= time && $cols->[3] >= 1000, "Apparently correct time");
 
 $cols = $csv->getline($fh);
-is(scalar @$cols, 0, "Correct number of rows in the table");
+is($cols, undef, "Correct number of rows in the table"); 
 $fh->close;
 
 $fh = new IO::File 'Incidents';
@@ -178,5 +177,5 @@ for my $r (@incidents)
 }
 
 $cols = $csv->getline($fh);
-is(scalar @$cols, 0, "Correct number of rows in the table");
+is($cols, undef, "Correct number of rows in the table"); 
 $fh->close;

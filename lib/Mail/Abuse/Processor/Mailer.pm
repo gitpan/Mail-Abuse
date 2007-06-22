@@ -14,7 +14,7 @@ use constant ANTILOOP	=> 'X-Mail-Abuse-Loop';
 
 				# The code below should be in a single line
 
-our $VERSION = do { my @r = (q$Revision: 1.8 $ =~ /\d+/g); sprintf " %d."."%03d" x $#r, @r };
+our $VERSION = do { my @r = (q$Revision: 1.9 $ =~ /\d+/g); sprintf " %d."."%03d" x $#r, @r };
 
 =pod
 
@@ -166,6 +166,17 @@ use constant SUCCESS	=> 'mailer success message';
 
 =pod
 
+=item B<mailer charset>
+
+The charset used to encode the response. Defaults to 'US-ASCII'. This
+is placed in the B<charset=> part of the MIME headers.
+
+=cut
+
+use constant CHARSET	=> 'mailer charset';
+
+=pod
+
 =back
 
 The following functions are implemented.
@@ -175,7 +186,8 @@ The following functions are implemented.
 =item C<process($report)>
 
 Takes a C<Mail::Abuse::Report> object as an argument and performs the
-processing action required.
+processing action required. MIME headers inserted by this module,
+force encoding to 8bit.
 
 =cut
 
@@ -201,6 +213,7 @@ sub process
     my $errors	= $rep->config->{&ERRORSTO};
     my $preced	= $rep->config->{&PRECEDENCE} || 'bulk';
     my $type	= $rep->config->{&TYPE} || 'mail';
+    my $charset = $rep->config->{&CHARSET} || 'US-ASCII';
 
     unless ($fail and $success and -f $fail and -f $success)
     {
@@ -234,10 +247,13 @@ sub process
     }
 
     my %Headers	= (
-		   'X-Mailer'	=> "Mail::Abuse::Processor::Mailer v$VERSION",
-		   &ANTILOOP	=> scalar localtime,
-		   'From'	=> $from,
-		   );
+	'X-Mailer'			=> __PACKAGE__ . " v$VERSION",
+	&ANTILOOP			=> scalar localtime,
+	'MIME-Version'			=> '1.0',
+	'Content-Type'			=> qq{text/plain; charset="$charset"},
+	'Content-Transfer-Encoding'	=> '8bit',
+	'From'				=> $from,
+    );
 
     $Headers{'Reply-To'}	= $replyto if $replyto;
     $Headers{'Errors-To'}	= $errors if $errors;
@@ -345,7 +361,7 @@ same terms as Perl itself.
 
 =head1 AUTHOR
 
-Luis E. Muñoz <luismunoz@cpan.org>
+Luis E. MuÃ±oz <luismunoz@cpan.org>
 
 =head1 SEE ALSO
 

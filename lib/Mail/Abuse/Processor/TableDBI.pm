@@ -12,7 +12,7 @@ use base 'Mail::Abuse::Processor';
 
 				# The code below should be in a single line
 
-our $VERSION = do { my @r = (q$Revision: 1.1 $ =~ /\d+/g); sprintf " %d."."%03d" x $#r, @r };
+our $VERSION = do { my @r = (q$Revision: 1.3 $ =~ /\d+/g); sprintf " %d."."%03d" x $#r, @r };
 
 =pod
 
@@ -32,7 +32,8 @@ Mail::Abuse::ProcessorTableDBI - Match incidents to other data using a DBI table
 
 =head1 DESCRIPTION
 
-This class matches incidents to data gathered into a DBI table.
+This class matches incidents to data gathered into a DBI table. The
+most recent entry in the DBI table will be used as the result.
 
 =over
 
@@ -107,7 +108,8 @@ in which this entry is valid.
 =item B<TIME_End>
 
 The number of seconds since the epoch for the end of the time window
-in which this entry is valid.
+in which this entry is valid. If this value is C<NULL>, the entry is
+assumed to be valid forever.
 
 =back
 
@@ -162,7 +164,8 @@ sub _init_dbi
 	  AND ? >= CIDR_Start
 	  AND ? <= CIDR_End
 	  AND ? >= TIME_Start
-	  AND ? <= TIME_End
+	  AND (? <= TIME_End
+	       OR TIME_End IS NULL)
 	ORDER BY TIME_Start DESC;
 	
     };
@@ -272,11 +275,20 @@ None by default.
 
 =head1 HISTORY
 
-$Log: TableDBI.pm,v $
-Revision 1.1  2005/06/09 16:03:46  lem
-First version, ready for beta testing
+  $Log: TableDBI.pm,v $
+  Revision 1.3  2006/09/21 16:18:37  lem
+  Indented the CHANGES section so that the POD processing does what I
+  want.
 
-
+  Revision 1.2  2006/09/21 16:17:43  lem
+  Entries with a NULL end time should be valid "forever". This allows
+  for the easy inclussion of fixed network elements in the table (ie,
+  the basic network assignment).
+  
+  The entry with the most recent time will be used as the result.
+  
+  Revision 1.1  2005/06/09 16:03:46  lem
+  First version, ready for beta testing
 
 =head1 LICENSE AND WARRANTY
 

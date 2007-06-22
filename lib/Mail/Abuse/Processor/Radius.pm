@@ -10,11 +10,13 @@ use IO::File;
 use File::Find;
 use Date::Parse;
 
+my $Debug = 0;			# Global debug flag
+
 use base 'Mail::Abuse::Processor';
 
 				# The code below should be in a single line
 
-our $VERSION = do { my @r = (q$Revision: 1.6 $ =~ /\d+/g); sprintf " %d."."%03d" x $#r, @r };
+our $VERSION = do { my @r = (q$Revision: 1.7 $ =~ /\d+/g); sprintf " %d."."%03d" x $#r, @r };
 
 our @Ignore = (qw/NAS-IP-Address/);
 
@@ -136,7 +138,8 @@ sub _livingston_parser
     my $file	= shift;
     my $fh	= shift;
 
-#    warn "# _livingston_parser $file with ", scalar @{$rep->incidents}, "\n";
+    warn "# _livingston_parser $file with ", scalar @{$rep->incidents}, "\n"
+	if $Debug;
 
     my $record;
     
@@ -148,14 +151,14 @@ sub _livingston_parser
 	$record .= $_ if /^\w+/ .. /^\s*$/;
 	if (/^\s*$/)
 	{
-#	    warn "# RECORD\n";
+	    warn "# RECORD\n" if $Debug;
 
 				# We only want to deal with Stop
 				# records...
 
 	    unless ($record =~ m/^\s*Acct-Status-Type = Stop/im)
 	    {
-#		warn "# Not a stop record\n";
+		warn "# Not a stop record\n" if $Debug;
 		$record = '';
 		next;
 	    }
@@ -176,7 +179,7 @@ sub _livingston_parser
 		my $key = $1;
 		my $val = $2;
 
-#		warn "# P: $key = $val\n";
+		warn "# P: $key = $val\n" if $Debug;
 
 		next if grep { $key eq $_ } @Ignore;
 		
@@ -190,9 +193,12 @@ sub _livingston_parser
 		}
 	    }
 
-#	    warn "# addr $_\n" for @addrs;
-#	    warn "# iaddr $_\n" for map { $_->ip } @{$rep->incidents};
-#	    warn "# itime $_\n" for map { $_->time } @{$rep->incidents};
+	    if ($Debug)
+	    {
+		warn "# addr $_\n" for @addrs;
+		warn "# iaddr $_\n" for map { $_->ip } @{$rep->incidents};
+		warn "# itime $_\n" for map { $_->time } @{$rep->incidents};
+	    }
 
 	    for my $i (@addrs)
 	    {
@@ -202,7 +208,7 @@ sub _livingston_parser
 
 	    unless (@match)
 	    {
-#		warn "# No matching IP\n";
+		warn "# No matching IP\n" if $Debug;
 		$record = '';
 		next;
 	    }
@@ -210,7 +216,7 @@ sub _livingston_parser
 
 	    unless ($record =~ m/^([^\n]+)/)
 	    {
-#		warn "# No timestamp\n";
+		warn "# No timestamp\n" if $Debug;
 		$record = '';
 		next;
 	    }
@@ -223,7 +229,7 @@ sub _livingston_parser
 
 	    unless ($record =~ m/^\s*Acct-Session-Time = (\d+)/mi)
 	    {
-#		warn "# No Acct-Session-Time\n";
+		warn "# No Acct-Session-Time\n" if $Debug;
 		$record = '';
 		next;
 	    }
@@ -250,6 +256,26 @@ sub _livingston_parser
     return;
 }
 
+sub _dispatch
+{
+    my $self	= shift;
+    my $rep	= shift;
+    my $type	= shift;
+    my $file	= shift;
+
+    return unless -f $file;
+    warn "M::A::P::Radius: Processing $file\n" 
+	if $Debug;
+    my $fh = new IO::File;
+    unless ($fh->open($file, "<:gzip(autopop)"))
+    {
+	warn "M::A::P::Radius: Open of $file failed: $!\n";
+	return;
+    }
+    $Dispatch{$type}->($self, $rep, $file, $fh);
+    $fh->close;
+}
+
 sub process
 {
     my $self	= shift;
@@ -263,8 +289,7 @@ sub process
 
     my $type	= lc $rep->config->{&TYPE} || 'livingston';
     my $loc	= $rep->config->{&LOCATION} || '/var/raddb/details';
-    my $debug	= $rep->config->{&DEBUG};
-    my $fh;
+    $Debug	= $rep->config->{&DEBUG};
 
     unless (-d $loc or -f _)	# Bail out if given garbage detail path
     {
@@ -283,32 +308,29 @@ sub process
     
     return if @{$rep->incidents} == 0;
 
-    find
-    ({
-	wanted		=> sub
-	{
-	    return unless -f;
-	    warn "M::A::P::Radius: Processing $File::Find::name\n" 
-		if $debug;
-
-	    $fh = new IO::File;
-
-	    unless ($fh->open($File::Find::name, "<:gzip(autopop)"))
-	    {
-		warn "M::A::P::Radius: Open of $File::Find::name failed: $!\n";
-		return;
-	    }
-
-	    $Dispatch{$type}->($self, $rep, $File::Find::name, $fh);
-
-	    $fh->close;
-	},
-	follow		=> 1,
-	no_chdir	=> 1,
-	untaint		=> 1,
-	untaint_skip	=> 1,
-    }, $loc);
-
+    if (-f $loc)
+    {
+	$self->_dispatch($rep, $type, $loc);
+    }
+    elsif (-d $loc)
+    {
+	find
+	    ({
+		wanted		=> sub
+		{
+		    $self->_dispatch($rep, $type, $File::Find::name);
+		},
+		follow		=> 1,
+		no_chdir	=> 1,
+		untaint		=> 1,
+		untaint_skip	=> 1,
+	    }, $loc);
+    }
+    else
+    {
+	warn "M::A::P::Radius: Don't know how to deal with ", &LOCATION, "\n";
+	return;
+    }
     return 1;
 }
 

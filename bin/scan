@@ -3,14 +3,14 @@
 use strict;
 use warnings;
 
-# $Id: scan,v 1.12 2004/02/23 06:41:11 lem Exp $
+# $Id: scan,v 1.13 2006/04/26 12:45:34 lem Exp $
 
 use Mail::RBL;
 use Pod::Usage;
 use Getopt::Std;
 use NetAddr::IP;
 
-our $VERSION = do { my @r = (q$Revision: 1.12 $ =~ /\d+/g); sprintf " %d."."%03d" x $#r, @r };
+our $VERSION = do { my @r = (q$Revision: 1.13 $ =~ /\d+/g); sprintf " %d."."%03d" x $#r, @r };
 
 =pod
 
@@ -176,7 +176,6 @@ blacklist.spambag.org
 block.blars.org
 block.dnsbl.sorbs.net
 blocked.hilli.dk
-blocked.secnap.net
 blocklist.squawk.com
 blocklist2.squawk.com
 blocktest.relays.osirusoft.com

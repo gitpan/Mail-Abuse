@@ -1,3 +1,9 @@
+MANIFEST			This list of files
+MANIFEST.SKIP
+META.yml
+Makefile.PL
+README
+TESTING
 bin/abuso
 bin/acat
 bin/google-gather
@@ -40,11 +46,6 @@ lib/Mail/Abuse/Reader/POP3.pm
 lib/Mail/Abuse/Reader/Stdin.pm
 lib/Mail/Abuse/Report.pm
 lib/Template/Plugin/Abuse.pm
-Makefile.PL
-MANIFEST			This list of files
-MANIFEST.SKIP
-META.yml
-README
 t/00-load-tt.t
 t/00-load.t
 t/00-pod.t
@@ -72,4 +73,3 @@ t/storenew.t
 t/table.t
 t/tabledbi.t
 t/time.t
-TESTING
